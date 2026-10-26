@@ -9,7 +9,7 @@
     coins:0, peak:0, bet:0, payout:0, spinning:false, stopped:0,
     outcome:null, targets:[], spinTimers:[], graph:[0], nav:0, infiniteAvoid:false,
     artG:0, zoneG:0, pendingBonus:null, bonusPayout:0, bonusType:null,
-    bonusArt:false, bonusFromArt:false, lastResult:""
+    bonusArt:false, bonusFromArt:false, lastResult:"", forcedRole:null
   };
   const symbolClass = s => s === "赤7" ? "red" : s === "BAR" ? "bar" : s === "スイカ" ? "watermelon" : s === "チェリー" ? "cherry" : s === "リプレイ" ? "replay" : "";
   function renderReel(i, center, randomize=false) {
@@ -222,9 +222,40 @@
   $("leverButton").addEventListener("click",startSpin);
   $("panelTap").addEventListener("click",tapPanel);
   stopButtons.forEach((b,i)=>b.addEventListener("click",()=>stopReel(i)));
+  $("applyDebugState").addEventListener("click",()=>{
+    if(state.phase==="spin"){ $("debugStatus").textContent="リール回転中は状態変更できません。先に停止してください。"; return; }
+    const requested=$("debugMode").value;
+    state.mode=requested;
+    state.artG=Math.max(0,Math.min(30,Number($("debugArtG").value)||0));
+    state.nav=Math.max(0,Number($("debugNav").value)||0);
+    state.infiniteAvoid=$("debugInfinite").checked;
+    if(requested==="bonus"){
+      if(!state.pendingBonus){state.pendingBonus=$("debugBonus").value;state.bonusType=state.pendingBonus;state.bonusPayout=0;state.bonusFromArt=false;state.bonusArt=false;}
+      state.mode="bonus";
+      startBonus();
+    } else {
+      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusFromArt=false;state.bonusArt=false;
+      setPhase("bet");
+      say("デバッグ「状態を変更しました」", "状態："+$("stateBadge").textContent+" / ART残りG："+state.artG+" / ナビ："+state.nav);
+      updateStats();
+    }
+    $("debugStatus").textContent="適用済み："+$("stateBadge").textContent+"、ART "+state.artG+"G、ナビ "+state.nav+"、無限回避 "+(state.infiniteAvoid?"ON":"OFF");
+  });
+  $("debugRole").addEventListener("change",()=>{
+    const role=$("debugRole").value;
+    state.forcedRole=role||null;
+    $("debugStatus").textContent=role?"次の通常ゲームに強制適用："+$("debugRole").selectedOptions[0].textContent:"次ゲームの強制小役は未設定";
+  });
+  $("clearDebugRole").addEventListener("click",()=>{
+    state.forcedRole=null;$("debugRole").value="";
+    $("debugStatus").textContent="強制小役を解除しました。次ゲームは通常抽選です。";
+  });
+  $("debugMode").addEventListener("change",()=>{
+    if($("debugMode").value==="bonus")$("debugStatus").textContent="ボーナス種別を選び「状態を適用」を押してください。";
+  });
   $("resetButton").addEventListener("click",()=>{
     if(state.spinning)state.spinTimers.forEach(clearInterval);
-    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false});
+    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,forcedRole:null});
     reels.forEach((_,i)=>renderReel(i,["ベル","リプレイ","BAR"][i]));
     $("演出種別").textContent="通常演出";$("expectation").textContent="期待度 --";say("大塚「……記録を始めるか」","MAX BETで遊技開始");
     setPhase("bet");updateStats();
