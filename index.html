@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090d13">
+  <title>異形見聞録 | A+ART SLOT</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="cabinet">
+    <header class="titlebar">
+      <div>
+        <p class="eyebrow">ORIGINAL A+ART SLOT</p>
+        <h1>異形見聞録</h1>
+      </div>
+      <div class="status-pill" id="stateBadge">通常時</div>
+    </header>
+
+    <section class="dashboard" aria-label="遊技データ">
+      <div class="data-panel">
+        <div class="data-label">TOTAL GAME</div><strong id="totalGames">0</strong>
+        <div class="data-grid">
+          <div><span>ボーナス間</span><b id="gamesSinceBonus">0 G</b></div>
+          <div><span>BB</span><b id="bbCount">0</b></div>
+          <div><span>RB</span><b id="rbCount">0</b></div>
+          <div><span>ART</span><b id="artCount">0</b></div>
+        </div>
+      </div>
+      <div class="data-panel graph-panel">
+        <div class="graph-head"><span class="data-label">差枚数</span><strong id="netCoins">0 枚</strong></div>
+        <canvas id="graph" aria-label="差枚数グラフ"></canvas>
+        <div class="graph-foot"><span>START</span><span id="peakCoins">MAX +0</span></div>
+      </div>
+    </section>
+
+    <section class="machine">
+      <div class="machine-label"><span>大塚探偵事務所 記録端末</span><span id="modeLabel">通常区間</span></div>
+      <div class="reel-frame" aria-label="リール">
+        <div class="reel-window" id="reel0"><div class="reel-symbol">ベル</div><div class="reel-symbol">リプレイ</div><div class="reel-symbol">スイカ</div></div>
+        <div class="reel-window" id="reel1"><div class="reel-symbol">リプレイ</div><div class="reel-symbol">ベル</div><div class="reel-symbol">BAR</div></div>
+        <div class="reel-window" id="reel2"><div class="reel-symbol">ベル</div><div class="reel-symbol">赤7</div><div class="reel-symbol">リプレイ</div></div>
+        <div class="payline"></div>
+      </div>
+      <div class="reel-caption"><span>LEFT</span><span>CENTER</span><span>RIGHT</span></div>
+      <section class="lcd" aria-live="polite">
+        <div class="lcd-top"><span id="演出種別">通常演出</span><span id="expectation">期待度 --</span></div>
+        <div id="dialogue" class="dialogue">大塚「……記録を始めるか」</div>
+        <div id="subDialogue" class="sub-dialogue">MAX BETで遊技開始</div>
+      </section>
+      <div class="payout-line"><span>払出</span><strong id="payout">0</strong><span>枚</span><span class="divider"></span><span>投入</span><strong id="betDisplay">0</strong><span>枚</span></div>
+    </section>
+
+    <section class="controls" aria-label="遊技操作">
+      <button id="leftStop" class="stop-button" disabled>左停止</button>
+      <button id="centerStop" class="stop-button" disabled>中停止</button>
+      <button id="rightStop" class="stop-button" disabled>右停止</button>
+      <button id="panelTap" class="panel-tap"><span class="panel-light"></span><span id="panelAction">MAX BET</span><small>タップで順次操作</small></button>
+      <div class="control-row">
+        <button id="betButton" class="control-button">MAX BET <small>BET</small></button>
+        <button id="leverButton" class="control-button lever" disabled>レバー <small>START</small></button>
+        <button id="resetButton" class="control-button reset">データ初期化</button>
+      </div>
+    </section>
+    <footer><span>試作版 0.1</span><span>抽選・停止制御は検証中</span></footer>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
