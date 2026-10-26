@@ -62,7 +62,43 @@
         <button id="resetButton" class="control-button reset">データ初期化</button>
       </div>
     </section>
-    <footer><span>試作版 0.1</span><span>抽選・停止制御は検証中</span></footer>
+    <details class="debug-panel" id="debugPanel">
+      <summary>開発用デバッグパネル</summary>
+      <p class="debug-note">ここでの操作はテスト用。状態変更は即時反映、小役強制は次の通常ゲーム1回だけに適用。</p>
+      <div class="debug-grid">
+        <label>遊技状態
+          <select id="debugMode">
+            <option value="normal">通常時</option><option value="art">準備ノ間（ART）</option>
+            <option value="zone">決戦ノ刻</option><option value="ending">終幕ノ物語</option>
+            <option value="ultimate">究極ノ力</option><option value="last">最後ノタタカイ</option>
+            <option value="bonus">ボーナス中</option>
+          </select>
+        </label>
+        <label>ボーナス種別
+          <select id="debugBonus"><option value="BIG">BIGボーナス</option><option value="REG">レギュラーボーナス</option></select>
+        </label>
+        <label>ART残りG
+          <input id="debugArtG" type="number" min="0" max="30" value="30">
+        </label>
+        <label>回避ナビストック
+          <input id="debugNav" type="number" min="0" max="999" value="0">
+        </label>
+        <label class="debug-check"><input id="debugInfinite" type="checkbox"> 無限回避ナビ</label>
+        <label>次ゲームの強制小役
+          <select id="debugRole">
+            <option value="">強制なし（通常抽選）</option>
+            <option value="miss">ハズレ</option><option value="replay">リプレイ</option>
+            <option value="bell">押し順ベル（8枚）</option><option value="commonBell">共通ベル（3枚）</option>
+            <option value="watermelon">スイカ</option><option value="cherry">チェリー</option>
+            <option value="big">BIG当選</option><option value="reg">REG当選</option>
+            <option value="artReplay">ART突入リプレイ</option><option value="fall">転落リプレイ</option>
+          </select>
+        </label>
+      </div>
+      <div class="debug-actions"><button id="applyDebugState" type="button">状態を適用</button><button id="clearDebugRole" type="button">強制小役を解除</button></div>
+      <p id="debugStatus" class="debug-status" aria-live="polite">デバッグ操作待機中</p>
+    </details>
+    <footer><span>試作版 0.2</span><span>抽選・停止制御は検証中</span></footer>
   </main>
   <script src="script.js"></script>
 </body>
