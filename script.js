@@ -66,20 +66,29 @@
     const zeroY=h-pad-(0-min)/range*(h-pad*2);ctx.strokeStyle="#708194";ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(0,zeroY);ctx.lineTo(w,zeroY);ctx.stroke();ctx.setLineDash([]);
   }
   function chooseOutcome() {
-    if(state.pendingBonus)return {role:"normal",bonus:null};
+    if(state.pendingBonus)return {role:"miss",bonus:null};
     const r=Math.random();
     if(r<1/240)return {role:"big",bonus:"BIG"};
     if(r<1/240+1/160)return {role:"reg",bonus:"REG"};
-    if(state.mode==="zone"||state.mode==="last") {
+    const artMode=["art","ending","ultimate"].includes(state.mode);
+    const zoneMode=state.mode==="zone"||state.mode==="last";
+    if(zoneMode) {
       if(r<.12)return {role:"artReplay"};
       if(r<.12+1/4.1)return {role:"fall"};
+      if(r<.12+1/4.1+1/14.7)return {role:"commonBell"};
+      if(r<.12+1/4.1+1/14.7+1/48.8)return {role:"watermelon"};
+      if(r<.12+1/4.1+1/14.7+1/48.8+1/62.3)return {role:"cherry"};
+      return {role:"miss"};
     }
-    if(state.mode==="art"||state.mode==="ending"||state.mode==="ultimate") {
+    if(artMode) {
       if(r<.204)return {role:"bell"};
       if(r<.408)return {role:"replay"};
-    } else {
-      if(r<.078)return {role:"replay"};
+      if(r<.408+1/14.7)return {role:"commonBell"};
+      if(r<.408+1/14.7+1/48.8)return {role:"watermelon"};
+      if(r<.408+1/14.7+1/48.8+1/62.3)return {role:"cherry"};
+      return {role:"miss"};
     }
+    if(r<.078)return {role:"replay"};
     if(r<.078+1/14.7)return {role:"commonBell"};
     if(r<.078+1/14.7+1/48.8)return {role:"watermelon"};
     if(r<.078+1/14.7+1/48.8+1/62.3)return {role:"cherry"};
