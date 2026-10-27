@@ -197,8 +197,11 @@
       if(state.infiniteAvoid||state.nav>0){if(!state.infiniteAvoid)state.nav--;say("住吉「回避成功です」","転落リプレイを回避しました。","chance");}
       else if(Math.random()<.5){say("住吉「回避成功です」","2択に正解。ART継続。","chance");}
       else {state.mode="normal";state.artG=0;state.zoneG=0;state.infiniteAvoid=false;say("大塚「……ここまでか」","回避失敗。通常時へ戻ります。");}
-    } else {
+    } else if(!o.bonus) {
       say("大塚「……何もないか」","次のゲームに備えよう。");
+    }
+    if(o.bonus && o.role!=="miss") {
+      say("住吉「ボーナス重複当選！」", (o.bonus==="BIG"?"BIG":"REG")+"と小役の同時成立。小役の払い出しを処理しました。", "confirm");
     }
     if(gain){state.coins+=gain;state.payout=gain;}
     state.peak=Math.max(state.peak,state.coins);
