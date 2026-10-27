@@ -66,43 +66,55 @@
     const zeroY=h-pad-(0-min)/range*(h-pad*2);ctx.strokeStyle="#708194";ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(0,zeroY);ctx.lineTo(w,zeroY);ctx.stroke();ctx.setLineDash([]);
   }
   function chooseOutcome() {
+    // An already-won bonus is held; do not run another bonus lottery.
     if(state.pendingBonus)return {role:"miss",bonus:null};
-    // Debug override is consumed exactly once, before the ordinary lottery.
-    if(state.forcedRole) {
-      const role=state.forcedRole;
-      state.forcedRole=null;
-      $("debugRole").value="";
-      $("debugStatus").textContent="強制小役を適用しました："+({miss:"ハズレ",replay:"リプレイ",bell:"押し順ベル",commonBell:"共通ベル",watermelon:"スイカ",cherry:"チェリー",big:"BIG当選",reg:"REG当選",artReplay:"ART突入リプレイ",fall:"転落リプレイ"}[role]||role);
-      if(role==="big")return {role:"big",bonus:"BIG"};
-      if(role==="reg")return {role:"reg",bonus:"REG"};
-      return {role};
-    }
-    const r=Math.random();
-    if(r<1/240)return {role:"big",bonus:"BIG"};
-    if(r<1/240+1/160)return {role:"reg",bonus:"REG"};
+
     const artMode=["art","ending","ultimate"].includes(state.mode);
     const zoneMode=state.mode==="zone"||state.mode==="last";
-    if(zoneMode) {
-      if(r<.12)return {role:"artReplay"};
-      if(r<.12+1/4.1)return {role:"fall"};
-      if(r<.12+1/4.1+1/14.7)return {role:"commonBell"};
-      if(r<.12+1/4.1+1/14.7+1/48.8)return {role:"watermelon"};
-      if(r<.12+1/4.1+1/14.7+1/48.8+1/62.3)return {role:"cherry"};
-      return {role:"miss"};
+    let role=null;
+
+    // Debug mode forces ONLY the small role. It never forces BIG/REG.
+    if(state.forcedRole) {
+      role=state.forcedRole;
+      state.forcedRole=null;
+      $("debugRole").value="";
+      $("debugStatus").textContent="強制小役を適用："+({miss:"ハズレ",replay:"リプレイ",bell:"押し順ベル",commonBell:"共通ベル",watermelon:"スイカ",cherry:"チェリー",artReplay:"ART突入リプレイ",fall:"転落リプレイ"}[role]||role);
+    } else {
+      const r=Math.random();
+      if(zoneMode) {
+        if(r<1/12.4)role="artReplay";
+        else if(r<1/12.4+1/4.1)role="fall";
+        else if(r<1/12.4+1/4.1+1/14.7)role="commonBell";
+        else if(r<1/12.4+1/4.1+1/14.7+1/48.8)role="watermelon";
+        else if(r<1/12.4+1/4.1+1/14.7+1/48.8+1/62.3)role="cherry";
+        else role="miss";
+      } else if(artMode) {
+        if(r<1/4.0)role="bell";
+        else if(r<1/4.0+1/4.9)role="replay";
+        else if(r<1/4.0+1/4.9+1/14.7)role="commonBell";
+        else if(r<1/4.0+1/4.9+1/14.7+1/48.8)role="watermelon";
+        else if(r<1/4.0+1/4.9+1/14.7+1/48.8+1/62.3)role="cherry";
+        else role="miss";
+      } else {
+        if(r<1/12.8)role="replay";
+        else if(r<1/12.8+1/14.7)role="commonBell";
+        else if(r<1/12.8+1/14.7+1/48.8)role="watermelon";
+        else if(r<1/12.8+1/14.7+1/48.8+1/62.3)role="cherry";
+        else role="miss";
+      }
     }
-    if(artMode) {
-      if(r<.204)return {role:"bell"};
-      if(r<.408)return {role:"replay"};
-      if(r<.408+1/14.7)return {role:"commonBell"};
-      if(r<.408+1/14.7+1/48.8)return {role:"watermelon"};
-      if(r<.408+1/14.7+1/48.8+1/62.3)return {role:"cherry"};
-      return {role:"miss"};
+
+    // Replay-type roles do not run the bonus lottery. Other roles can overlap
+    // with a normally drawn BIG/REG, independently of the forced small role.
+    const replayRole=role==="replay"||role==="artReplay"||role==="fall";
+    let bonus=null;
+    if(!replayRole) {
+      const b=Math.random();
+      if(b<1/240)bonus="BIG";
+      else if(b<1/240+1/160)bonus="REG";
     }
-    if(r<.078)return {role:"replay"};
-    if(r<.078+1/14.7)return {role:"commonBell"};
-    if(r<.078+1/14.7+1/48.8)return {role:"watermelon"};
-    if(r<.078+1/14.7+1/48.8+1/62.3)return {role:"cherry"};
-    return {role:"miss"};
+    if(bonus)return {role,bonus};
+    return {role};
   }
   function targetsFor(outcome) {
     const role=outcome.role;
