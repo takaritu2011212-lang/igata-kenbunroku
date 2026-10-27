@@ -170,45 +170,85 @@
   function finishGame() {
     state.spinning=false;
     const o=state.outcome;
+    const modeAtStart=state.mode;
+    const wasArtMode=["art","ending","ultimate"].includes(modeAtStart);
     let gain=0;
-    if(o.bonus) {
-      state.pendingBonus=o.bonus;state.bonusType=o.bonus;state.bonusPayout=0;state.bonusFromArt=["art","ending","ultimate"].includes(state.mode);
-      if(o.bonus==="BIG"){state.bb++;say("住吉「BIGボーナス内部当選！」",o.role==="miss"?"赤7を確認。ボーナスを開始します。":"小役とBIGの重複当選。ボーナスを待機します。","confirm");}
-      else {state.rb++;say("住吉「REGボーナス内部当選！」",o.role==="miss"?"BARを確認。ボーナスを開始します。":"小役とREGの重複当選。ボーナスを待機します。","confirm");}
+
+    // Register a bonus exactly once. In ART it is queued until the 30G set ends.
+    if(o.bonus && !state.pendingBonus) {
+      state.pendingBonus=o.bonus;
+      state.bonusType=o.bonus;
+      state.bonusPayout=0;
+      state.bonusFromArt=wasArtMode;
+      if(o.bonus==="BIG") {
+        state.bb++;
+        say("住吉「BIGボーナス内部当選！」",o.role==="miss"?"赤7を確認。":"小役とBIGの重複当選。小役の払い出しを処理します。","confirm");
+      } else {
+        state.rb++;
+        say("住吉「REGボーナス内部当選！」",o.role==="miss"?"BARを確認。":"小役とREGの重複当選。小役の払い出しを処理します。","confirm");
+      }
       state.sinceBonus=0;
-      if(!state.bonusFromArt && o.bonus==="BIG")state.bonusArt=true;
-      else if(!state.bonusFromArt && o.bonus==="REG")state.bonusArt=Math.random()<.25;
+      if(!wasArtMode && o.bonus==="BIG")state.bonusArt=true;
+      else if(!wasArtMode && o.bonus==="REG")state.bonusArt=Math.random()<.25;
     }
+
+    // Process the small role independently, including its payout when it overlaps a bonus.
     if(o.role==="replay"||o.role==="artReplay") {
       gain=3;
-      if(["art","ending","ultimate"].includes(state.mode) && Math.random()<(state.mode==="ultimate"?1/3:1/6))state.nav++;
-      if(o.role==="artReplay"){state.mode="art";state.artG=0;state.artSets++;state.infiniteAvoid=false;state.zoneG=0;say("住吉「ART突入リプレイです！」","準備ノ間へ移行します。","confirm");}
-      else say("住吉「リプレイです」","投入分を再遊技します。");
+      if(["art","ending","ultimate"].includes(modeAtStart) && Math.random()<(modeAtStart==="ultimate"?1/3:1/6))state.nav++;
+      if(o.role==="artReplay") {
+        state.mode="art";state.artG=0;state.artSets++;state.infiniteAvoid=false;state.zoneG=0;
+        say("住吉「ART突入リプレイです！」","準備ノ間へ移行します。","confirm");
+      } else if(!o.bonus) say("住吉「リプレイです」","投入分を再遊技します。");
     } else if(o.role==="bell"||o.role==="commonBell") {
-      gain=o.role==="bell"?8:3;say("住吉「ベルです」",gain+"枚の払い出しを確認。");
+      gain=o.role==="bell"?8:3;
+      if(!o.bonus)say("住吉「ベルです」",gain+"枚の払い出しを確認。");
     } else if(o.role==="watermelon") {
-      gain=12;if(["art","ultimate"].includes(state.mode))state.nav+=Math.random()<.5?1:2;
-      say("住吉「スイカです！」","12枚の払い出し。","chance");
+      gain=12;
+      if(["art","ending","ultimate"].includes(modeAtStart))state.nav+=Math.random()<.5?1:2;
+      if(!o.bonus)say("住吉「スイカです！」","12枚の払い出し。","chance");
     } else if(o.role==="cherry") {
-      gain=4;if(["art","ultimate"].includes(state.mode))state.nav+=2;
-      say("住吉「チェリーです！」","4枚の払い出し。","chance");
+      gain=4;
+      if(["art","ending","ultimate"].includes(modeAtStart))state.nav+=2;
+      if(!o.bonus)say("住吉「チェリーです！」","4枚の払い出し。","chance");
     } else if(o.role==="fall") {
-      if(state.infiniteAvoid||state.nav>0){if(!state.infiniteAvoid)state.nav--;say("住吉「回避成功です」","転落リプレイを回避しました。","chance");}
-      else if(Math.random()<.5){say("住吉「回避成功です」","2択に正解。ART継続。","chance");}
-      else {state.mode="normal";state.artG=0;state.zoneG=0;state.infiniteAvoid=false;say("大塚「……ここまでか」","回避失敗。通常時へ戻ります。");}
+      if(state.infiniteAvoid||state.nav>0) {
+        if(!state.infiniteAvoid)state.nav--;
+        say("住吉「回避成功です」","転落リプレイを回避しました。","chance");
+      } else if(Math.random()<.5) {
+        say("住吉「回避成功です」","2択に正解。ART継続。","chance");
+      } else {
+        state.mode="normal";state.artG=0;state.zoneG=0;state.infiniteAvoid=false;
+        say("大塚「……ここまでか」","回避失敗。通常時へ戻ります。");
+      }
     } else if(!o.bonus) {
       say("大塚「……何もないか」","次のゲームに備えよう。");
     }
-    if(o.bonus && o.role!=="miss") {
-      say("住吉「ボーナス重複当選！」", (o.bonus==="BIG"?"BIG":"REG")+"と小役の同時成立。小役の払い出しを処理しました。", "confirm");
-    }
+
     if(gain){state.coins+=gain;state.payout=gain;}
     state.peak=Math.max(state.peak,state.coins);
     state.graph.push(state.coins);
-    if(state.mode==="art" && state.artG>=30 && !state.pendingBonus){state.mode="zone";state.zoneG=0;state.artG=0;say("住吉「準備ノ間、終了です」","決戦ノ刻へ移行します。","hot");}
-    if(state.mode==="ending" && state.coins>=2400){state.mode="ultimate";state.coins=0;state.nav=0;state.infiniteAvoid=false;state.artG=0;say("住吉「終幕ノ物語、完了です」","差枚数区間をリセット。究極ノ力へ。","confirm");}
-    if(state.mode!=="ending" && state.coins>=2200){state.mode="ending";state.artG=0;say("住吉「終幕ノ物語へ移行します」","差枚数+2200枚到達。","confirm");}
-    if(state.mode==="zone"&&state.zoneG>0&&state.zoneG%30===0){say("大塚「決戦は続く」","転落リプレイに注意。","hot");}
+
+    // ART, including special ART modes, runs its full 30G even with a queued bonus.
+    if(["art","ending","ultimate"].includes(state.mode) && state.artG>=30) {
+      if(state.pendingBonus) {
+        // Keep the current ART state; the next MAX BET starts the queued bonus.
+      } else {
+        state.mode="zone";state.zoneG=0;state.artG=0;
+        say("住吉「ART 30G終了です」","継続ゾーン、決戦ノ刻へ移行します。","hot");
+      }
+    }
+
+    if(state.mode==="ending" && state.coins>=2400) {
+      state.mode="ultimate";state.coins=0;state.nav=0;state.infiniteAvoid=false;state.artG=0;
+      say("住吉「終幕ノ物語、完了です」","差枚数区間をリセット。究極ノ力へ。","confirm");
+    } else if(state.mode!=="ending" && state.coins>=2200) {
+      state.mode="ending";state.artG=0;
+      say("住吉「終幕ノ物語へ移行します」","差枚数+2200枚到達。","confirm");
+    }
+    if((state.mode==="zone"||state.mode==="last")&&state.zoneG>0&&state.zoneG%30===0) {
+      say("大塚「決戦は続く」","転落リプレイに注意。","hot");
+    }
     updateStats();
     setPhase("result");
   }
@@ -223,25 +263,51 @@
     if(!state.pendingBonus)return;
     const isReplay=Math.random()<1/12.8;
     const gain=isReplay?2:11;
-    state.bonusPayout+=gain;state.coins+=gain-2;state.payout=gain;
+    state.bonusPayout+=gain;
+    state.coins+=gain-2;
+    state.payout=gain;
     const target=state.pendingBonus==="BIG"?242:66;
-    if(state.bonusPayout>=target){
-      const wasArt=state.bonusFromArt, type=state.pendingBonus, artWin=state.bonusArt;
+
+    if(state.bonusPayout>=target) {
+      const wasArt=state.bonusFromArt;
+      const type=state.pendingBonus;
+      const normalArtWin=type==="BIG" ? true : Math.random()<.25;
       state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;
-      if(wasArt){state.infiniteAvoid=true;state.mode="zone";state.zoneG=0;say("住吉「ボーナス終了。無限回避状態です」","転落リプレイを回避しながらART復帰を待ちます。","confirm");}
-      else if(artWin){state.mode="art";state.artG=0;state.artSets++;state.infiniteAvoid=false;say("住吉「ART当選です！」","準備ノ間、30G開始。","confirm");}
-      else {state.mode="normal";say("大塚「……記録を続けるぞ」","ボーナス終了。通常時へ。");}
+
+      if(wasArt) {
+        // ART bonuses are consumed after the 30G set. BIG guarantees ART;
+        // REG uses the ART lottery. The next zone receives the infinite-avoid flag.
+        state.infiniteAvoid=true;
+        if(normalArtWin) {
+          state.mode="art";state.artG=0;state.artSets++;
+          say("住吉「ART中ボーナス終了」","ART継続確定。次の継続ゾーンに無限回避を設定。","confirm");
+        } else {
+          state.mode="zone";state.zoneG=0;state.artG=0;
+          say("住吉「ART中REG終了」","ART非当選。無限回避状態で継続ゾーンへ。","confirm");
+        }
+      } else if(normalArtWin) {
+        state.mode="art";state.artG=0;state.artSets++;state.infiniteAvoid=false;
+        say("住吉「ART当選です！」","準備ノ間、30G開始。","confirm");
+      } else {
+        state.mode="normal";state.artG=0;state.zoneG=0;state.infiniteAvoid=false;
+        say("大塚「……記録を続けるぞ」","REG終了。ART非当選、通常時へ。");
+      }
       state.bonusFromArt=false;state.bonusArt=false;
       state.peak=Math.max(state.peak,state.coins);state.graph.push(state.coins);
       updateStats();setPhase("result");
     } else {
       say("住吉「ボーナス消化中です」",state.bonusPayout+" / "+target+" 枚","confirm");
-      state.peak=Math.max(state.peak,state.coins);state.graph.push(state.coins);updateStats();setPhase("bonus");
+      state.peak=Math.max(state.peak,state.coins);state.graph.push(state.coins);
+      updateStats();setPhase("bonus");
     }
   }
   function bet() {
     if(state.phase!=="bet"&&state.phase!=="result")return;
-    if(state.pendingBonus){startBonus();return;}
+    if(state.pendingBonus) {
+      const waitingForArtEnd=state.bonusFromArt &&
+        ["art","ending","ultimate"].includes(state.mode) && state.artG<30;
+      if(!waitingForArtEnd){startBonus();return;}
+    }
     state.bet=3;state.payout=0;setPhase("lever");
     say("住吉「準備完了です」","レバーを操作してください。");
   }
