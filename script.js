@@ -67,6 +67,16 @@
   }
   function chooseOutcome() {
     if(state.pendingBonus)return {role:"miss",bonus:null};
+    // Debug override is consumed exactly once, before the ordinary lottery.
+    if(state.forcedRole) {
+      const role=state.forcedRole;
+      state.forcedRole=null;
+      $("debugRole").value="";
+      $("debugStatus").textContent="強制小役を適用しました："+({miss:"ハズレ",replay:"リプレイ",bell:"押し順ベル",commonBell:"共通ベル",watermelon:"スイカ",cherry:"チェリー",big:"BIG当選",reg:"REG当選",artReplay:"ART突入リプレイ",fall:"転落リプレイ"}[role]||role);
+      if(role==="big")return {role:"big",bonus:"BIG"};
+      if(role==="reg")return {role:"reg",bonus:"REG"};
+      return {role};
+    }
     const r=Math.random();
     if(r<1/240)return {role:"big",bonus:"BIG"};
     if(r<1/240+1/160)return {role:"reg",bonus:"REG"};
@@ -152,7 +162,7 @@
     } else if(o.role==="replay"||o.role==="artReplay") {
       gain=3;
       if(["art","ending","ultimate"].includes(state.mode) && Math.random()<(state.mode==="ultimate"?1/3:1/6))state.nav++;
-      if(o.role==="artReplay"){state.mode="art";state.artG++;state.artG=0;say("住吉「ART突入リプレイです！」","準備ノ間へ移行します。","confirm");}
+      if(o.role==="artReplay"){state.mode="art";state.artG=0;state.artSets++;state.infiniteAvoid=false;state.zoneG=0;say("住吉「ART突入リプレイです！」","準備ノ間へ移行します。","confirm");}
       else say("住吉「リプレイです」","投入分を再遊技します。");
     } else if(o.role==="bell"||o.role==="commonBell") {
       gain=o.role==="bell"?8:3;say("住吉「ベルです」",gain+"枚の払い出しを確認。");
@@ -165,7 +175,7 @@
     } else if(o.role==="fall") {
       if(state.infiniteAvoid||state.nav>0){if(!state.infiniteAvoid)state.nav--;say("住吉「回避成功です」","転落リプレイを回避しました。","chance");}
       else if(Math.random()<.5){say("住吉「回避成功です」","2択に正解。ART継続。","chance");}
-      else {state.mode=state.mode==="last"?"normal":"normal";state.artG=0;state.zoneG=0;say("大塚「……ここまでか」","回避失敗。通常時へ戻ります。");}
+      else {state.mode="normal";state.artG=0;state.zoneG=0;state.infiniteAvoid=false;say("大塚「……ここまでか」","回避失敗。通常時へ戻ります。");}
     } else {
       say("大塚「……何もないか」","次のゲームに備えよう。");
     }
