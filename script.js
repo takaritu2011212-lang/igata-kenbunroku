@@ -9,7 +9,7 @@
     coins:0, peak:0, bet:0, payout:0, spinning:false, stopped:0,
     outcome:null, targets:[], spinTimers:[], graph:[0], nav:0, infiniteAvoid:false,
     artG:0, zoneG:0, pendingBonus:null, bonusPayout:0, bonusType:null,
-    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, presentation:null, lastResult:"", forcedRole:null
+    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, presentation:null, normalScene:null, lastResult:"", forcedRole:null
   };
   const symbolClass = s => s === "赤7" ? "red" : s === "BAR" ? "bar" : s === "スイカ" ? "watermelon" : s === "チェリー" ? "cherry" : s === "リプレイ" ? "replay" : "";
   function renderReel(i, center, randomize=false) {
@@ -144,7 +144,29 @@
     $("演出種別").textContent="遊技演出";$("expectation").textContent="期待度 --";
     const o=state.outcome;
     const tease=Math.random();
-    if(o.bonus){say("大塚「……今の反応、妙だな」","住吉「まだ断定できません。記録を続けます」","hot");$("expectation").textContent="期待度 高";}
+    if(state.mode==="normal" && !state.presentation && !o.bonus) {
+      if(!state.normalScene && tease<.12) state.normalScene={stage:"investigation",age:0,kind:Math.random()<.5?"mission":"battle",chance:Math.random()<.20?"red":Math.random()<.55?"blue":"none"};
+      if(state.normalScene) {
+        say("住吉「さきほどの記録に、気になる点があります」","調査の予兆。まだ発展するとは限らない。",state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
+        $("演出種別").textContent="調査煽り";
+        $("expectation").textContent=state.normalScene.chance==="red"?"期待度 高":state.normalScene.chance==="blue"?"期待度 中":"期待度 ?";
+      } else {
+        const daily=[
+          ["郡山「この事務所、資料の山で床が見えないんだが」","大塚「床が見えるとでも思っていたのか」"],
+          ["住吉「本日の調査予定を確認します」","大塚「その前に郡山が昨日の報告書を出していない」"],
+          ["郡山「腹減った。調査の前に飯にしないか？」","大塚「調査の後だ。……たぶん」"],
+          ["住吉「新しい依頼が届いています」","大塚「まずは内容を確認しよう」"],
+          ["郡山「平和だな。今日は何も起きないといいが」","大塚「そういうことを言うな」"],
+          ["住吉「備品の補充をしておきました」","郡山「お菓子も？」 住吉「備品ではありません」"],
+          ["大塚「この資料、誰がここに置いた？」","郡山「知らん。資料が勝手に増える事務所だし」"],
+          ["住吉「天気は安定しています」","大塚「事件まで安定していると助かるんだがな」"]
+        ];
+        const line=daily[Math.floor(Math.random()*daily.length)];
+        say(line[0],line[1]);
+        $("演出種別").textContent="日常演出";
+        $("expectation").textContent="期待度 --";
+      }
+    } else if(o.bonus){say("大塚「……今の反応、妙だな」","住吉「まだ断定できません。記録を続けます」","hot");$("expectation").textContent="期待度 高";}
     else if(o.role==="cherry"||o.role==="watermelon"){say("大塚「これは……？」","住吉「レア役を確認。何か起きるかもしれません」","chance");$("expectation").textContent="小役示唆";}
     else if(o.role==="bell"&&tease<.13){say("住吉「反応が一瞬だけ……？」","大塚「見間違いでなければいいが」","chance");$("expectation").textContent="期待度 ?";
     } else if(o.role==="miss"&&tease<.055){say("大塚「……気配がした」","住吉「記録上はハズレですが、反応が残っています」","chance");$("expectation").textContent="期待度 ?";}
@@ -278,10 +300,59 @@
         }
       }
     } else if(!state.presentation && !o.bonus) {
-      // 非当選時にもレア役・ベル・ハズレの一部で煽りを発生させる。
-      if(o.role==="cherry"||o.role==="watermelon") {
-        $("演出種別").textContent="チャンス演出";
-        $("expectation").textContent="期待度 中";
+      // 通常時専用：日常→調査→発展。調査止まりや発展失敗もある。
+      if(modeAtStart==="normal" && state.normalScene) {
+        const s=state.normalScene;
+        s.age++;
+        if(s.stage==="investigation") {
+          if(s.age===1) {
+            say("大塚「現場の記録を洗い直すぞ」","怪異調査演出。ここで終了する場合もある。",s.chance==="red"?"hot":s.chance==="blue"?"chance":"");
+            $("演出種別").textContent="怪異調査";
+            $("expectation").textContent=s.chance==="red"?"期待度 高":s.chance==="blue"?"期待度 中":"期待度 ?";
+          } else if(s.age>=2) {
+            const develop=Math.random()<(s.kind==="battle" ? 0.58 : 0.42);
+            if(develop) {
+              s.stage="development";s.age=0;
+              const battle=s.kind==="battle";
+              say(battle?"郡山「来るぞ！　正面から押さえる！」":"住吉「証拠の確保を開始します」",
+                battle?"対決発展！ 強演出。":"ミッション発展。",s.chance==="red"||battle?"hot":"chance");
+              $("演出種別").textContent=battle?"対決発展":"ミッション発展";
+              $("expectation").textContent=battle?"期待度 高":"期待度 中";
+            } else {
+              say("住吉「調査結果、異常なしです」","発展せず。日常へ戻ります。");
+              $("演出種別").textContent="調査終了";
+              $("expectation").textContent="期待度 --";
+              state.normalScene=null;
+            }
+          }
+        } else if(s.stage==="development") {
+          s.age++;
+          const battle=s.kind==="battle";
+          if(s.age===1) {
+            say(battle?"大塚「相手の動きを見極めろ！」":"住吉「証拠を確保できれば解決です」",
+              battle?"対決中。":"ミッション進行中。",s.chance==="red"||battle?"hot":"chance");
+            $("演出種別").textContent=battle?"対決演出":"ミッション演出";
+            $("expectation").textContent=battle?"期待度 高":"期待度 中";
+          } else {
+            const success=Math.random()<(battle ? 0.38 : 0.20);
+            if(success) {
+              say(battle?"大塚「制圧した……！」":"住吉「証拠の確保に成功しました」","演出成功。ボーナス告知とは別判定です。","confirm");
+              $("演出種別").textContent=battle?"対決成功":"ミッション成功";
+              $("expectation").textContent="期待度 高";
+            } else {
+              say(battle?"大塚「逃げられたか……！」":"住吉「証拠が足りません」","発展失敗。通常演出へ戻ります。");
+              $("演出種別").textContent="発展失敗";
+              $("expectation").textContent="期待度 --";
+            }
+            state.normalScene=null;
+          }
+        }
+      } else if(modeAtStart==="normal" && (o.role==="cherry"||o.role==="watermelon")) {
+        const red=o.role==="cherry"&&Math.random()<.18;
+        say(red?"住吉「赤い反応です！　これは見逃せません」":"住吉「レア役を確認しました」",
+          red?"赤文字！ 大チャンス！":"青文字でチャンス。",red?"hot":"chance");
+        $("演出種別").textContent=red?"赤文字チャンス":"青文字チャンス";
+        $("expectation").textContent=red?"期待度 高":"期待度 中";
       }
     }
 
@@ -411,7 +482,7 @@
   });
   $("resetButton").addEventListener("click",()=>{
     if(state.spinning)state.spinTimers.forEach(clearInterval);
-    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,presentation:null,forcedRole:null});
+    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,presentation:null,normalScene:null,forcedRole:null});
     reels.forEach((_,i)=>renderReel(i,["ベル","リプレイ","BAR"][i]));
     $("演出種別").textContent="通常演出";$("expectation").textContent="期待度 --";say("大塚「……記録を始めるか」","MAX BETで遊技開始");
     setPhase("bet");updateStats();
