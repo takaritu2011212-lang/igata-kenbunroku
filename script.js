@@ -204,7 +204,8 @@
     if(o.bonus && !state.pendingBonus) {
       state.pendingBonus=o.bonus;
       state.bonusAnnounced=false;
-      state.presentation={bonus:o.bonus,age:0,stage:"tease",development:0};
+      state.presentation={bonus:o.bonus,age:0,stage:"tease",development:0,kind:Math.random()<.55?"battle":"mission",chance:Math.random()<.22?"red":Math.random()<.60?"blue":"none"};
+      state.normalScene=null;
       state.bonusType=o.bonus;
       state.bonusPayout=0;
       state.bonusFromArt=wasArtMode;
@@ -267,7 +268,11 @@
           p.stage="development";p.development=0;
           $("演出種別").textContent="発展演出";
           $("expectation").textContent="期待度 上昇";
-          say("住吉「反応の発生源を特定します」","調査開始。あと3Gで結果を告知。","hot");
+          const battle=p.kind==="battle";
+          say(battle?"郡山「反応の中心はあそこだ！　行くぞ！」":"住吉「異常の原因を特定しました。証拠を確保します」",
+            battle?"怪異との対決へ発展！":"ミッション発展！",p.chance==="red"||battle?"hot":"chance");
+          $("演出種別").textContent=battle?"対決発展":"ミッション発展";
+          $("expectation").textContent=battle?"期待度 高":"期待度 中";
         } else if(!o.bonus) {
           const lines=[
             ["大塚「気のせい……か？」","住吉「反応は微弱ですが、消えていません」"],
@@ -282,15 +287,20 @@
         }
       } else if(p.stage==="development") {
         p.development++;
-        const devLines=[
-          ["大塚「現場を押さえるぞ」","発展演出 1G目"],
-          ["住吉「核心に近づいています」","発展演出 2G目"],
-          ["大塚「決着をつける」","発展演出 最終G"]
+        const battle=p.kind==="battle";
+        const devLines=battle?[
+          ["郡山「正面から来るぞ！」","対決 1G目"],
+          ["大塚「動きを読んだ。ここで決める」","対決 2G目"],
+          ["大塚「これで終わりだ！」","対決 最終G"]
+        ]:[
+          ["住吉「現場の痕跡を照合します」","ミッション 1G目"],
+          ["住吉「証拠を確保。あと一歩です」","ミッション 2G目"],
+          ["大塚「よし、結果を確認する」","ミッション 最終G"]
         ];
         const line=devLines[Math.min(p.development-1,2)];
-        $("演出種別").textContent="発展演出";
-        $("expectation").textContent=p.development>=2?"期待度 高":"期待度 上昇";
-        say(line[0],line[1],p.development>=2?"hot":"chance");
+        $("演出種別").textContent=battle?"対決演出":"ミッション演出";
+        $("expectation").textContent=battle?"期待度 高":p.development>=2?"期待度 高":"期待度 上昇";
+        say(line[0],line[1],battle||p.development>=2?"hot":"chance");
         if(p.development>=3) {
           p.stage="announced";state.bonusAnnounced=true;
           $("演出種別").textContent="BONUS確定";
