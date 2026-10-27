@@ -66,9 +66,8 @@
     const zeroY=h-pad-(0-min)/range*(h-pad*2);ctx.strokeStyle="#708194";ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(0,zeroY);ctx.lineTo(w,zeroY);ctx.stroke();ctx.setLineDash([]);
   }
   function chooseOutcome() {
-    // An already-won bonus is held; do not run another bonus lottery.
-    if(state.pendingBonus)return {role:"miss",bonus:null};
-
+    // Keep drawing small roles while an ART bonus is queued, but never draw another bonus.
+    const bonusAlreadyPending=!!state.pendingBonus;
     const artMode=["art","ending","ultimate"].includes(state.mode);
     const zoneMode=state.mode==="zone"||state.mode==="last";
     let role=null;
@@ -108,7 +107,7 @@
     // Replay roles never trigger bonus lottery. BIG and REG are mutually exclusive.
     const replayRole=role==="replay"||role==="artReplay"||role==="fall";
     let bonus=null;
-    if(!replayRole) {
+    if(!replayRole && !bonusAlreadyPending) {
       const rates = {
         commonBell: { big: 1/97.95, reg: 1/65.30 },
         watermelon: { big: 1/29.50, reg: 1/19.67 },
