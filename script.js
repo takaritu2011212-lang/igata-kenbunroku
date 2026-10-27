@@ -9,7 +9,7 @@
     coins:0, peak:0, bet:0, payout:0, spinning:false, stopped:0,
     outcome:null, targets:[], spinTimers:[], graph:[0], nav:0, infiniteAvoid:false,
     artG:0, zoneG:0, pendingBonus:null, bonusPayout:0, bonusType:null,
-    bonusArt:false, bonusFromArt:false, lastResult:"", forcedRole:null
+    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, presentation:null, lastResult:"", forcedRole:null
   };
   const symbolClass = s => s === "赤7" ? "red" : s === "BAR" ? "bar" : s === "スイカ" ? "watermelon" : s === "チェリー" ? "cherry" : s === "リプレイ" ? "replay" : "";
   function renderReel(i, center, randomize=false) {
@@ -143,8 +143,11 @@
     if(state.mode==="zone"||state.mode==="last")state.zoneG++;
     $("演出種別").textContent="遊技演出";$("expectation").textContent="期待度 --";
     const o=state.outcome;
-    if(o.bonus){say("大塚「……何か来る！」","記録に異常反応。停止して確認しよう。","hot");$("expectation").textContent="期待度 高";}
-    else if(o.role==="cherry"||o.role==="watermelon"){say("大塚「これは……？」","住吉「小役の反応を確認します」","chance");$("expectation").textContent="小役示唆";}
+    const tease=Math.random();
+    if(o.bonus){say("大塚「……今の反応、妙だな」","住吉「まだ断定できません。記録を続けます」","hot");$("expectation").textContent="期待度 高";}
+    else if(o.role==="cherry"||o.role==="watermelon"){say("大塚「これは……？」","住吉「レア役を確認。何か起きるかもしれません」","chance");$("expectation").textContent="小役示唆";}
+    else if(o.role==="bell"&&tease<.13){say("住吉「反応が一瞬だけ……？」","大塚「見間違いでなければいいが」","chance");$("expectation").textContent="期待度 ?";
+    } else if(o.role==="miss"&&tease<.055){say("大塚「……気配がした」","住吉「記録上はハズレですが、反応が残っています」","chance");$("expectation").textContent="期待度 ?";}
     else say("大塚「何だ？」","住吉「リールを停止してください」");
     reels.forEach((reel,i)=>{
       state.spinTimers[i]=window.setInterval(()=>renderReel(i,symbols[Math.floor(Math.random()*symbols.length)],true),70+i*12);
@@ -169,6 +172,7 @@
   }
   function finishGame() {
     state.spinning=false;
+    const presentationAtStart=state.presentation;
     const o=state.outcome;
     const modeAtStart=state.mode;
     const wasArtMode=["art","ending","ultimate"].includes(modeAtStart);
@@ -177,15 +181,17 @@
     // Register a bonus exactly once. In ART it is queued until the 30G set ends.
     if(o.bonus && !state.pendingBonus) {
       state.pendingBonus=o.bonus;
+      state.bonusAnnounced=false;
+      state.presentation={bonus:o.bonus,age:0,stage:"tease",development:0};
       state.bonusType=o.bonus;
       state.bonusPayout=0;
       state.bonusFromArt=wasArtMode;
       if(o.bonus==="BIG") {
         state.bb++;
-        say("住吉「BIGボーナス内部当選！」",o.role==="miss"?"赤7を確認。":"小役とBIGの重複当選。小役の払い出しを処理します。","confirm");
+        say("住吉「内部データに異常値……」","大塚「まだ結論を出すな。記録を続けろ」","hot");
       } else {
         state.rb++;
-        say("住吉「REGボーナス内部当選！」",o.role==="miss"?"BARを確認。":"小役とREGの重複当選。小役の払い出しを処理します。","confirm");
+        say("住吉「反応を検出しました」","大塚「……正体が分かるまで待つぞ」","hot");
       }
       state.sinceBonus=0;
       if(!wasArtMode && o.bonus==="BIG")state.bonusArt=true;
@@ -229,6 +235,56 @@
     state.peak=Math.max(state.peak,state.coins);
     state.graph.push(state.coins);
 
+    // 演出進行：当選ゲームから数ゲーム後に発展し、3Gの発展演出後に告知。
+    // 内部当選フラグは保持するが、告知まではボーナスを開始しない。
+    if(presentationAtStart && state.presentation) {
+      const p=state.presentation;
+      if(p.stage==="tease") {
+        p.age++;
+        if(p.age>=6) {
+          p.stage="development";p.development=0;
+          $("演出種別").textContent="発展演出";
+          $("expectation").textContent="期待度 上昇";
+          say("住吉「反応の発生源を特定します」","調査開始。あと3Gで結果を告知。","hot");
+        } else if(!o.bonus) {
+          const lines=[
+            ["大塚「気のせい……か？」","住吉「反応は微弱ですが、消えていません」"],
+            ["住吉「記録にノイズがあります」","大塚「そのまま追跡しろ」"],
+            ["大塚「妙に静かだな」","住吉「静かな時ほど、油断は禁物です」"],
+            ["住吉「さきほどの反応と似ています」","大塚「偶然か、それとも……」"]
+          ];
+          const line=lines[Math.floor(Math.random()*lines.length)];
+          say(line[0],line[1],p.age>=4?"hot":"chance");
+          $("演出種別").textContent=p.age>=4?"前兆演出":"通常演出";
+          $("expectation").textContent=p.age>=4?"期待度 上昇":"期待度 ?";
+        }
+      } else if(p.stage==="development") {
+        p.development++;
+        const devLines=[
+          ["大塚「現場を押さえるぞ」","発展演出 1G目"],
+          ["住吉「核心に近づいています」","発展演出 2G目"],
+          ["大塚「決着をつける」","発展演出 最終G"]
+        ];
+        const line=devLines[Math.min(p.development-1,2)];
+        $("演出種別").textContent="発展演出";
+        $("expectation").textContent=p.development>=2?"期待度 高":"期待度 上昇";
+        say(line[0],line[1],p.development>=2?"hot":"chance");
+        if(p.development>=3) {
+          p.stage="announced";state.bonusAnnounced=true;
+          $("演出種別").textContent="BONUS確定";
+          $("expectation").textContent="当選確定";
+          say(p.bonus==="BIG"?"住吉「BIGボーナス確定！」":"住吉「レギュラーボーナス確定！」",
+            p.bonus==="BIG"?"大塚「よし、次に進むぞ」":"大塚「REGか。ここからが本番だ」","confirm");
+        }
+      }
+    } else if(!state.presentation && !o.bonus) {
+      // 非当選時にもレア役・ベル・ハズレの一部で煽りを発生させる。
+      if(o.role==="cherry"||o.role==="watermelon") {
+        $("演出種別").textContent="チャンス演出";
+        $("expectation").textContent="期待度 中";
+      }
+    }
+
     // ART, including special ART modes, runs its full 30G even with a queued bonus.
     if(["art","ending","ultimate"].includes(state.mode) && state.artG>=30) {
       if(state.pendingBonus) {
@@ -253,7 +309,7 @@
     setPhase("result");
   }
   function startBonus() {
-    if(!state.pendingBonus)return;
+    if(!state.pendingBonus || !state.bonusAnnounced)return;
     state.mode="bonus";state.bet=2;state.bonusPayout=0;
     $("演出種別").textContent="BONUS";
     say(state.pendingBonus==="BIG"?"BIGボーナス":"レギュラーボーナス","ボーナス中。パネルをタップして進行。","confirm");
@@ -272,7 +328,7 @@
       const wasArt=state.bonusFromArt;
       const type=state.pendingBonus;
       const normalArtWin=type==="BIG" ? true : Math.random()<.25;
-      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;
+      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.presentation=null;
 
       if(wasArt) {
         // ART bonuses are consumed after the 30G set. BIG guarantees ART;
@@ -304,6 +360,7 @@
   function bet() {
     if(state.phase!=="bet"&&state.phase!=="result")return;
     if(state.pendingBonus) {
+      if(!state.bonusAnnounced) { state.bet=3;state.payout=0;setPhase("lever");say("大塚「調査を続けるぞ」","反応を追跡中。告知まで遊技を続けます。","chance");return; }
       const waitingForArtEnd=state.bonusFromArt &&
         ["art","ending","ultimate"].includes(state.mode) && state.artG<30;
       if(!waitingForArtEnd){startBonus();return;}
@@ -333,7 +390,7 @@
       state.mode="bonus";
       startBonus();
     } else {
-      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusFromArt=false;state.bonusArt=false;
+      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.presentation=null;state.bonusFromArt=false;state.bonusArt=false;
       setPhase("bet");
       say("デバッグ「状態を変更しました」", "状態："+$("stateBadge").textContent+" / ART残りG："+state.artG+" / ナビ："+state.nav);
       updateStats();
@@ -354,7 +411,7 @@
   });
   $("resetButton").addEventListener("click",()=>{
     if(state.spinning)state.spinTimers.forEach(clearInterval);
-    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,forcedRole:null});
+    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,presentation:null,forcedRole:null});
     reels.forEach((_,i)=>renderReel(i,["ベル","リプレイ","BAR"][i]));
     $("演出種別").textContent="通常演出";$("expectation").textContent="期待度 --";say("大塚「……記録を始めるか」","MAX BETで遊技開始");
     setPhase("bet");updateStats();
