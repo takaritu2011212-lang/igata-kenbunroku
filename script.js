@@ -104,22 +104,30 @@
       }
     }
 
-    // Replay-type roles do not run the bonus lottery. Other roles can overlap
-    // with a normally drawn BIG/REG, independently of the forced small role.
+    // Bonus lottery is conditional on the established role-specific rates.
+    // Replay roles never trigger bonus lottery. BIG and REG are mutually exclusive.
     const replayRole=role==="replay"||role==="artReplay"||role==="fall";
     let bonus=null;
     if(!replayRole) {
+      const rates = {
+        commonBell: { big: 1/97.95, reg: 1/65.30 },
+        watermelon: { big: 1/29.50, reg: 1/19.67 },
+        cherry: { big: 1/23.11, reg: 1/15.40 },
+        miss: { big: 1/392.30, reg: 1/261.53 },
+        bell: { big: 0, reg: 0 }
+      };
+      const rate=rates[role]||{big:0,reg:0};
       const b=Math.random();
-      if(b<1/240)bonus="BIG";
-      else if(b<1/240+1/160)bonus="REG";
+      if(b<rate.big)bonus="BIG";
+      else if(b<rate.big+rate.reg)bonus="REG";
     }
     if(bonus)return {role,bonus};
     return {role};
   }
   function targetsFor(outcome) {
     const role=outcome.role;
-    if(role==="big")return ["赤7","赤7","赤7"];
-    if(role==="reg")return ["BAR","BAR","BAR"];
+    if(role==="big" || (role==="miss" && outcome.bonus==="BIG"))return ["赤7","赤7","赤7"];
+    if(role==="reg" || (role==="miss" && outcome.bonus==="REG"))return ["BAR","BAR","BAR"];
     if(role==="watermelon")return ["スイカ","ベル","スイカ"];
     if(role==="cherry")return ["チェリー","ベル","リプレイ"];
     if(role==="replay"||role==="artReplay")return ["リプレイ","リプレイ","リプレイ"];
@@ -164,14 +172,15 @@
     state.spinning=false;
     const o=state.outcome;
     let gain=0;
-    if(o.role==="big"||o.role==="reg") {
+    if(o.bonus) {
       state.pendingBonus=o.bonus;state.bonusType=o.bonus;state.bonusPayout=0;state.bonusFromArt=["art","ending","ultimate"].includes(state.mode);
-      if(o.bonus==="BIG"){state.bb++;say("住吉「BIGボーナス確定！」","赤7を確認。ボーナスを開始します。","confirm");}
-      else {state.rb++;say("住吉「REGボーナス確定！」","BARを確認。ボーナスを開始します。","confirm");}
+      if(o.bonus==="BIG"){state.bb++;say("住吉「BIGボーナス内部当選！」",o.role==="miss"?"赤7を確認。ボーナスを開始します。":"小役とBIGの重複当選。ボーナスを待機します。","confirm");}
+      else {state.rb++;say("住吉「REGボーナス内部当選！」",o.role==="miss"?"BARを確認。ボーナスを開始します。":"小役とREGの重複当選。ボーナスを待機します。","confirm");}
       state.sinceBonus=0;
       if(!state.bonusFromArt && o.bonus==="BIG")state.bonusArt=true;
       else if(!state.bonusFromArt && o.bonus==="REG")state.bonusArt=Math.random()<.25;
-    } else if(o.role==="replay"||o.role==="artReplay") {
+    }
+    if(o.role==="replay"||o.role==="artReplay") {
       gain=3;
       if(["art","ending","ultimate"].includes(state.mode) && Math.random()<(state.mode==="ultimate"?1/3:1/6))state.nav++;
       if(o.role==="artReplay"){state.mode="art";state.artG=0;state.artSets++;state.infiniteAvoid=false;state.zoneG=0;say("住吉「ART突入リプレイです！」","準備ノ間へ移行します。","confirm");}
