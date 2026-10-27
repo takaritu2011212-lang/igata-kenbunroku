@@ -386,7 +386,7 @@
     state.nav=Math.max(0,Number($("debugNav").value)||0);
     state.infiniteAvoid=$("debugInfinite").checked;
     if(requested==="bonus"){
-      if(!state.pendingBonus){state.pendingBonus=$("debugBonus").value;state.bonusType=state.pendingBonus;state.bonusPayout=0;state.bonusFromArt=false;state.bonusArt=false;}
+      if(!state.pendingBonus){state.pendingBonus=$("debugBonus").value;state.bonusType=state.pendingBonus;state.bonusPayout=0;state.bonusFromArt=false;state.bonusArt=false;state.bonusAnnounced=true;state.presentation=null;}
       state.mode="bonus";
       startBonus();
     } else {
