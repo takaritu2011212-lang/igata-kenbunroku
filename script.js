@@ -9,7 +9,7 @@
     coins:0, peak:0, bet:0, payout:0, spinning:false, stopped:0,
     outcome:null, targets:[], spinTimers:[], graph:[0], nav:0, infiniteAvoid:false,
     artG:0, zoneG:0, pendingBonus:null, bonusPayout:0, bonusType:null,
-    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, bonusRevealPending:false, bonusSymbolsAligned:false, presentation:null, normalScene:null, lastResult:"", forcedRole:null
+    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, bonusRevealPending:false, bonusSymbolsAligned:false, replayStreak:0, presentation:null, normalScene:null, lastResult:"", forcedRole:null
   };
   const symbolClass = s => s === "赤7" ? "red" : s === "BAR" ? "bar" : s === "スイカ" ? "watermelon" : s === "チェリー" ? "cherry" : s === "リプレイ" ? "replay" : "";
   function renderReel(i, center, randomize=false) {
@@ -246,11 +246,15 @@
     // Process the small role independently, including its payout when it overlaps a bonus.
     if(o.role==="replay"||o.role==="artReplay") {
       gain=3;
+      state.replayStreak=(o.role==="replay" ? state.replayStreak+1 : 0);
       if(["art","ending","ultimate"].includes(modeAtStart) && Math.random()<(modeAtStart==="ultimate"?1/3:1/6))state.nav++;
       if(o.role==="artReplay") {
         state.mode="art";state.artG=0;state.artSets++;state.infiniteAvoid=false;state.zoneG=0;
         say("住吉「ART突入リプレイです！」","準備ノ間へ移行します。","confirm");
-      } else if(!o.bonus) say("住吉「リプレイです」","投入分を再遊技します。");
+      } else if(!o.bonus) {
+        if(state.replayStreak>=3) say("住吉「リプレイが積まれてますね」","リプレイが"+state.replayStreak+"ゲーム連続しています。","chance");
+        else say("住吉「リプレイです」","投入分を再遊技します。");
+      }
     } else if(o.role==="bell"||o.role==="commonBell") {
       gain=o.role==="bell"?8:3;
       if(!o.bonus)say("住吉「ベルです」",gain+"枚の払い出しを確認。");
@@ -534,7 +538,7 @@
   });
   $("resetButton").addEventListener("click",()=>{
     if(state.spinning)state.spinTimers.forEach(clearInterval);
-    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,bonusRevealPending:false,bonusSymbolsAligned:false,presentation:null,normalScene:null,forcedRole:null});
+    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,bonusRevealPending:false,bonusSymbolsAligned:false,replayStreak:0,presentation:null,normalScene:null,forcedRole:null});
     reels.forEach((_,i)=>renderReel(i,["ベル","リプレイ","BAR"][i]));
     $("演出種別").textContent="通常演出";$("expectation").textContent="期待度 --";setVisual("daily","日常記録","大塚探偵事務所","CASE FILE");say("大塚「……記録を始めるか」,"MAX BETで遊技開始");
     setPhase("bet");updateStats();
