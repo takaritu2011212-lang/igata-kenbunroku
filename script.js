@@ -27,6 +27,19 @@
     stage.className="visual-stage"+(kind?" is-"+kind:"")+(extra?" is-"+extra:"");
     $("visualTitle").textContent=title; $("visualDetail").textContent=detail; $("visualIcon").textContent=icon;
   }
+  function triggerEffect(level="light") {
+    const cabinet=document.querySelector(".cabinet"), stage=$("visualStage");
+    if(!cabinet||!stage)return;
+    const classes=level==="max"?["screen-shake-heavy","screen-flash","screen-glitch"]:
+      level==="strong"?["screen-shake","screen-flash"]:
+      level==="glitch"?["screen-glitch","screen-shake"]:["screen-pulse"];
+    [cabinet,stage].forEach(el=>{
+      classes.forEach(c=>el.classList.remove(c));
+      void el.offsetWidth;
+      classes.forEach(c=>el.classList.add(c));
+      window.setTimeout(()=>classes.forEach(c=>el.classList.remove(c)),level==="max"?900:650);
+    });
+  }
   function setPhase(phase) {
     state.phase=phase;
     $("betButton").disabled=phase!=="bet";
@@ -159,8 +172,14 @@
     const o=state.outcome;
     const tease=Math.random();
     if(state.mode==="normal" && !state.presentation && !o.bonus) {
-      if(!state.normalScene && tease<.12) state.normalScene={stage:"investigation",age:0,kind:Math.random()<.5?"mission":"battle",chance:Math.random()<.20?"red":Math.random()<.55?"blue":"none"};
-      if(state.normalScene) {
+      if(!state.normalScene && tease<.16) state.normalScene={stage:"investigation",age:0,kind:Math.random()<.52?"mission":"battle",chance:Math.random()<.20?"red":Math.random()<.55?"blue":"none"};
+      if(!state.normalScene && o.role!=="replay" && tease<.035) {
+        setVisual("glitch","矛盾反応","リプレイ予告と実際の反応が不一致","CONFLICT","red");
+        say("住吉「リプレイ反応……いえ、数値が違います！」","矛盾演出発生！ 大チャンス！","hot");
+        $("演出種別").textContent="矛盾チャンス";
+        $("expectation").textContent="期待度 大幅上昇";
+        triggerEffect("strong");
+      } else if(state.normalScene) {
         setVisual("investigation","異常反応を検知","記録データに不一致","ANOMALY",state.normalScene.chance==="red"?"red":state.normalScene.chance==="blue"?"blue":"");
         say("住吉「さきほどの記録に、気になる点があります」","調査の予兆。まだ発展するとは限らない。",state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
         $("演出種別").textContent="調査煽り";
@@ -177,18 +196,19 @@
           ["住吉「天気は安定しています」","大塚「事件まで安定していると助かるんだがな」"]
         ];
         const line=daily[Math.floor(Math.random()*daily.length)];
-        const followUps={
-          replay:["住吉「今日の予定はリプレイですね」","大塚「予定を繰り返すな。報告書は一度で済ませろ」"],
+        const roleLines={
+          replay:["住吉「リプレイです。再遊技を確認しました」","大塚「投入分は戻った。次の調査を続けるぞ」"],
           commonBell:["住吉「共通ベルです。いつも通りですね」","郡山「いつも通りってのが一番助かる」"],
           bell:["住吉「押し順ベル、払い出しを確認」","大塚「手順を間違えなければ問題ない」"],
-          watermelon:["住吉「スイカを確認。さきほどの記録にも似た反応がありました」","大塚「関連があるか、次の結果も見ておこう」"],
+          watermelon:["住吉「スイカを確認。反応を記録します」","大塚「関連があるか、次の結果も見ておこう」"],
           cherry:["住吉「チェリーです。反応を記録しました」","郡山「小さな兆候でも見逃すな、ってことだな」"],
           miss:["住吉「今回は該当する反応なしです」","大塚「なら予定に戻る。次の依頼を確認しよう」"]
         };
-        const follow=followUps[state.lastNormalRole];
-        setVisual("daily","事務所の日常",follow?"直前の結果を踏まえた会話":"調査の合間のひととき","DAILY");
-        if(follow){say(follow[0],follow[1]);state.conversationTopic=state.lastNormalRole;state.conversationAge++;}
-        else {say(line[0],line[1]);state.conversationTopic="daily";state.conversationAge=0;}
+        const lineForRole=roleLines[o.role] || line;
+        setVisual("daily","事務所の日常",roleLines[o.role]?"今回の成立役を確認":"調査の合間のひととき","DAILY");
+        say(lineForRole[0],lineForRole[1]);
+        state.conversationTopic=o.role;
+        state.conversationAge++;
         $("演出種別").textContent="日常演出";
         $("expectation").textContent="期待度 --";
       }
@@ -369,9 +389,10 @@
               const battle=s.kind==="battle";
               setVisual(battle?"battle":"mission",battle?"怪異対決":"証拠確保",battle?"対象が姿を現した":"調査対象を特定",battle?"BATTLE":"MISSION",battle?"impact":"");
               say(battle?"郡山「来るぞ！　正面から押さえる！」":"住吉「証拠の確保を開始します」",
-                battle?"対決発展！ 強演出。":"ミッション発展。",s.chance==="red"||battle?"hot":"chance");
+                battle?"対決発展！ 強演出。":"ミッション発展。成功すればボーナス確定。",s.chance==="red"||battle?"hot":"chance");
               $("演出種別").textContent=battle?"対決発展":"ミッション発展";
               $("expectation").textContent=battle?"期待度 高":"期待度 中";
+              triggerEffect(battle||s.chance==="red"?"strong":"light");
             } else {
               setVisual("failure","調査終了","異常なし。記録を閉じます","NO TRACE");
               say("住吉「調査結果、異常なしです」","発展せず。日常へ戻ります。");
@@ -392,15 +413,31 @@
           } else {
             const success=Math.random()<(battle ? 0.38 : 0.20);
             if(success) {
-              setVisual("success",battle?"対象制圧":"証拠確保成功","調査結果を記録しました","SUCCESS","reveal");
-              say(battle?"大塚「制圧した……！」":"住吉「証拠の確保に成功しました」","演出成功。ボーナス告知とは別判定です。","confirm");
-              $("演出種別").textContent=battle?"対決成功":"ミッション成功";
-              $("expectation").textContent="期待度 高";
+              if(!battle) {
+                const missionBonus=Math.random()<0.5?"BIG":"REG";
+                state.pendingBonus=missionBonus; state.bonusType=missionBonus; state.bonusPayout=0;
+                state.bonusFromArt=false; state.bonusAnnounced=true; state.bonusRevealPending=false; state.bonusSymbolsAligned=false;
+                state.bonusArt=missionBonus==="BIG"||Math.random()<0.25;
+                if(missionBonus==="BIG")state.bb++;else state.rb++;
+                state.sinceBonus=0; state.presentation=null;
+                setVisual("success",missionBonus==="BIG"?"BIG BONUS確定":"REG BONUS確定","ミッション成功！ ボーナス当選確定","BONUS","reveal");
+                say("住吉「証拠確保成功！ ボーナス確定です！」","大塚「よし、図柄を揃えるぞ」","confirm");
+                $("演出種別").textContent="ミッション成功・BONUS確定";
+                $("expectation").textContent="当選確定";
+                triggerEffect("max");
+              } else {
+                setVisual("success","対象制圧","対決勝利！","SUCCESS","reveal");
+                say("大塚「制圧した……！」","対決勝利！ 大チャンス演出成功。","confirm");
+                $("演出種別").textContent="対決成功";
+                $("expectation").textContent="期待度 高";
+                triggerEffect("strong");
+              }
             } else {
               setVisual("failure",battle?"対象逃走":"証拠不足","調査を終了します","FAILED");
               say(battle?"大塚「逃げられたか……！」":"住吉「証拠が足りません」","発展失敗。通常演出へ戻ります。");
               $("演出種別").textContent="発展失敗";
               $("expectation").textContent="期待度 --";
+              triggerEffect("light");
             }
             state.normalScene=null;
           }
