@@ -95,3 +95,27 @@ footer{display:flex;justify-content:space-between;gap:10px;color:#5e6d7c;font-si
 @keyframes visual-impact{0%{transform:scale(1);filter:brightness(1)}35%{transform:scale(1.012);filter:brightness(1.8)}100%{transform:scale(1);filter:brightness(1)}}
 @keyframes visual-reveal{0%{opacity:.2;transform:scale(.88);letter-spacing:.35em}65%{opacity:1;transform:scale(1.04)}100%{transform:scale(1);letter-spacing:.12em}}
 @media(prefers-reduced-motion:reduce){.visual-stage.is-glitch,.visual-stage.is-impact,.visual-stage.is-reveal .visual-title{animation:none}}
+
+/* Louder pachislot-style visual feedback */
+.cabinet.screen-shake{animation:cabinet-shake .42s linear 2}
+.cabinet.screen-shake-heavy{animation:cabinet-shake-heavy .68s linear 2}
+.cabinet.screen-flash{filter:brightness(1.32) saturate(1.25)}
+.cabinet.screen-glitch{animation:cabinet-glitch .16s steps(2,end) 4}
+.cabinet.screen-pulse{animation:cabinet-pulse .55s ease-out}
+.visual-stage.screen-shake{animation:visual-shake .38s linear 2}
+.visual-stage.screen-shake-heavy{animation:visual-shake-heavy .62s linear 2}
+.visual-stage.screen-flash{box-shadow:inset 0 0 0 4px #fff4b8,inset 0 0 48px #ffdf5eaa,0 0 25px #ffdf5e88;filter:brightness(1.7)}
+.visual-stage.screen-glitch{animation:visual-glitch .14s steps(2,end) 5}
+.visual-stage.screen-pulse{animation:visual-impact .55s ease-out}
+.visual-stage.is-glitch .visual-title{color:#ff5e6c;text-shadow:3px 0 #54dfff,-3px 0 #ff3150,0 0 22px #ff2338;animation:visual-glitch .18s steps(2,end) 4}
+.visual-stage.is-battle .visual-title,.visual-stage.is-mission .visual-title{animation:visual-impact .42s ease-out}
+.visual-stage.is-success .visual-icon{color:#ffe69b;border-color:#ffdf85;box-shadow:0 0 18px #ffcf6c77}
+.visual-stage.is-reveal{border-color:#fff0a5;box-shadow:inset 0 0 42px #ffbd3d55,0 0 24px #ffcf6c55}
+@keyframes cabinet-shake{0%,100%{transform:translate(0,0)}20%{transform:translate(-3px,1px)}40%{transform:translate(4px,-1px)}60%{transform:translate(-3px,2px)}80%{transform:translate(2px,-1px)}}
+@keyframes cabinet-shake-heavy{0%,100%{transform:translate(0,0) rotate(0)}15%{transform:translate(-6px,2px) rotate(-.25deg)}30%{transform:translate(7px,-2px) rotate(.3deg)}45%{transform:translate(-5px,1px) rotate(-.2deg)}60%{transform:translate(5px,2px) rotate(.2deg)}75%{transform:translate(-3px,-1px)}}
+@keyframes visual-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}50%{transform:translateX(4px)}75%{transform:translateX(-2px)}}
+@keyframes visual-shake-heavy{0%,100%{transform:translate(0,0) scale(1)}20%{transform:translate(-7px,2px) scale(1.015)}40%{transform:translate(8px,-2px) scale(1.02)}60%{transform:translate(-6px,1px) scale(1.015)}80%{transform:translate(4px,-1px)}}
+@keyframes cabinet-glitch{0%,100%{filter:none;transform:translateX(0)}25%{filter:hue-rotate(45deg) contrast(1.5);transform:translateX(-2px)}50%{filter:contrast(1.8);transform:translateX(3px)}75%{filter:hue-rotate(-35deg);transform:translateX(-1px)}}
+@keyframes cabinet-pulse{0%{filter:brightness(1)}35%{filter:brightness(1.45)}100%{filter:brightness(1)}}
+@media(prefers-reduced-motion:reduce){.cabinet.screen-shake,.cabinet.screen-shake-heavy,.cabinet.screen-glitch,.cabinet.screen-pulse,.visual-stage.screen-shake,.visual-stage.screen-shake-heavy,.visual-stage.screen-glitch,.visual-stage.screen-pulse{animation:none}}
+
