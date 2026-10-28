@@ -71,3 +71,27 @@ footer{display:flex;justify-content:space-between;gap:10px;color:#5e6d7c;font-si
 .debug-actions button:first-child{border-color:#397b83;color:var(--cyan)}
 .debug-status{margin-bottom:0}
 @media(max-width:520px){.debug-grid{grid-template-columns:1fr}.debug-actions button{flex:1}}
+
+/* Story-driven visual演出 stage */
+.visual-stage{position:relative;isolation:isolate;overflow:hidden;min-height:108px;margin:10px 0 0;border:1px solid #344b60;border-radius:6px;background:radial-gradient(ellipse at 50% 110%,#20394b,#080d14 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center;padding:12px;transition:background .25s,border-color .25s,filter .25s}
+.visual-stage:before,.visual-stage:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1}
+.visual-stage:before{background:linear-gradient(transparent 49%,#71e5ed14 50%,transparent 51%);background-size:100% 6px;opacity:.5}
+.visual-stage:after{inset:8px;border:1px solid #71e5ed22}
+.visual-icon{font-size:10px;letter-spacing:.22em;color:#91a2b5;border:1px solid #3a5267;padding:4px 9px;background:#071019b8}
+.visual-title{font-size:clamp(17px,4vw,24px);font-weight:950;letter-spacing:.12em;color:#dceaf5;text-shadow:0 0 14px #71e5ed38}
+.visual-detail{font-size:11px;color:#91a2b5;letter-spacing:.08em}
+.visual-stage.is-daily{background:radial-gradient(ellipse at 50% 110%,#1e3943,#080d14 72%)}
+.visual-stage.is-investigation{border-color:#6a8aa4;background:radial-gradient(ellipse at 50% 100%,#1a354d,#080b12 72%)}
+.visual-stage.is-blue{border-color:#409bdf;box-shadow:inset 0 0 22px #1b8ce522}
+.visual-stage.is-red{border-color:#ff555f;background:radial-gradient(ellipse at 50% 100%,#4c111b,#10080d 72%);box-shadow:inset 0 0 28px #ff243622}
+.visual-stage.is-battle{border-color:#ff5e56;background:linear-gradient(110deg,#210d15,#35121a 48%,#0b1019);box-shadow:inset 0 0 32px #ff2d4020}
+.visual-stage.is-mission{border-color:#d4b25f;background:radial-gradient(ellipse at 50% 100%,#40321a,#0b1018 75%)}
+.visual-stage.is-success{border-color:#ffdf85;background:radial-gradient(ellipse at 50% 100%,#5a4117,#101018 75%);box-shadow:inset 0 0 32px #ffca5b33}
+.visual-stage.is-failure{filter:saturate(.55);border-color:#546273;background:radial-gradient(ellipse at 50% 100%,#1b252d,#080d14 75%)}
+.visual-stage.is-glitch{animation:visual-glitch .28s steps(2,end) 2}
+.visual-stage.is-impact{animation:visual-impact .42s ease-out}
+.visual-stage.is-reveal .visual-title{text-shadow:0 0 8px #ffcf6c,0 0 24px #ff9e40;animation:visual-reveal .65s ease-out}
+@keyframes visual-glitch{0%{transform:translateX(0);filter:hue-rotate(0)}25%{transform:translateX(-3px);filter:hue-rotate(90deg)}50%{transform:translateX(3px);filter:contrast(1.8)}100%{transform:translateX(0);filter:none}}
+@keyframes visual-impact{0%{transform:scale(1);filter:brightness(1)}35%{transform:scale(1.012);filter:brightness(1.8)}100%{transform:scale(1);filter:brightness(1)}}
+@keyframes visual-reveal{0%{opacity:.2;transform:scale(.88);letter-spacing:.35em}65%{opacity:1;transform:scale(1.04)}100%{transform:scale(1);letter-spacing:.12em}}
+@media(prefers-reduced-motion:reduce){.visual-stage.is-glitch,.visual-stage.is-impact,.visual-stage.is-reveal .visual-title{animation:none}}
