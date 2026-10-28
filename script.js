@@ -555,7 +555,7 @@
     if(state.spinning)state.spinTimers.forEach(clearInterval);
     Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,bonusRevealPending:false,bonusSymbolsAligned:false,replayStreak:0,conversationTopic:"schedule",conversationAge:0,lastNormalRole:null,presentation:null,normalScene:null,forcedRole:null});
     reels.forEach((_,i)=>renderReel(i,["ベル","リプレイ","BAR"][i]));
-    $("演出種別").textContent="通常演出";$("expectation").textContent="期待度 --";setVisual("daily","日常記録","大塚探偵事務所","CASE FILE");say("大塚「……記録を始めるか」,"MAX BETで遊技開始");
+    $("演出種別").textContent="通常演出";$("expectation").textContent="期待度 --";setVisual("daily","日常記録","大塚探偵事務所","CASE FILE");say("大塚「……記録を始めるか」","MAX BETで遊技開始");
     setPhase("bet");updateStats();
   });
   window.addEventListener("resize",drawGraph);
