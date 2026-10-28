@@ -9,7 +9,7 @@
     coins:0, peak:0, bet:0, payout:0, spinning:false, stopped:0,
     outcome:null, targets:[], spinTimers:[], graph:[0], nav:0, infiniteAvoid:false,
     artG:0, zoneG:0, pendingBonus:null, bonusPayout:0, bonusType:null,
-    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, bonusRevealPending:false, presentation:null, normalScene:null, lastResult:"", forcedRole:null
+    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, bonusRevealPending:false, bonusSymbolsAligned:false, presentation:null, normalScene:null, lastResult:"", forcedRole:null
   };
   const symbolClass = s => s === "赤7" ? "red" : s === "BAR" ? "bar" : s === "スイカ" ? "watermelon" : s === "チェリー" ? "cherry" : s === "リプレイ" ? "replay" : "";
   function renderReel(i, center, randomize=false) {
@@ -214,7 +214,7 @@
     const o=state.outcome;
     const modeAtStart=state.mode;
     if(o.role==="bonusReveal") {
-      state.spinning=false;
+      state.spinning=false;state.bonusSymbolsAligned=true;
       setVisual("success",o.bonus==="BIG"?"BIG BONUS":"REGULAR BONUS","ボーナス図柄揃い","BONUS","reveal");
       say(o.bonus==="BIG"?"住吉「BIG図柄、揃いました！」":"住吉「REG図柄、揃いました！」","ボーナスを開始します。","confirm");
       updateStats();setPhase("result");return;
@@ -439,7 +439,7 @@
       const wasArt=state.bonusFromArt;
       const type=state.pendingBonus;
       const normalArtWin=type==="BIG" ? true : Math.random()<.25;
-      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.bonusRevealPending=false;state.presentation=null;
+      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.bonusRevealPending=false;state.bonusSymbolsAligned=false;state.presentation=null;
 
       if(wasArt) {
         // ART bonuses are consumed after the 30G set. BIG guarantees ART;
@@ -471,6 +471,7 @@
   function bet() {
     if(state.phase!=="bet"&&state.phase!=="result")return;
     if(state.pendingBonus) {
+      if(state.bonusSymbolsAligned){startBonus();return;}
       if(!state.bonusAnnounced) { state.bet=3;state.payout=0;setPhase("lever");say("大塚「調査を続けるぞ」","反応を追跡中。告知まで遊技を続けます。","chance");return; }
       if(!state.bonusRevealPending) {
         const waitingForArtEnd=state.bonusFromArt &&
@@ -512,7 +513,7 @@
       state.mode="bonus";
       startBonus();
     } else {
-      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.bonusRevealPending=false;state.presentation=null;state.bonusFromArt=false;state.bonusArt=false;
+      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.bonusRevealPending=false;state.bonusSymbolsAligned=false;state.presentation=null;state.bonusFromArt=false;state.bonusArt=false;
       setPhase("bet");
       say("デバッグ「状態を変更しました」", "状態："+$("stateBadge").textContent+" / ART残りG："+state.artG+" / ナビ："+state.nav);
       updateStats();
@@ -533,7 +534,7 @@
   });
   $("resetButton").addEventListener("click",()=>{
     if(state.spinning)state.spinTimers.forEach(clearInterval);
-    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,bonusRevealPending:false,presentation:null,normalScene:null,forcedRole:null});
+    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,bonusRevealPending:false,bonusSymbolsAligned:false,presentation:null,normalScene:null,forcedRole:null});
     reels.forEach((_,i)=>renderReel(i,["ベル","リプレイ","BAR"][i]));
     $("演出種別").textContent="通常演出";$("expectation").textContent="期待度 --";setVisual("daily","日常記録","大塚探偵事務所","CASE FILE");say("大塚「……記録を始めるか」,"MAX BETで遊技開始");
     setPhase("bet");updateStats();
