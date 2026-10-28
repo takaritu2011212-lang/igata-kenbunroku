@@ -9,7 +9,7 @@
     coins:0, peak:0, bet:0, payout:0, spinning:false, stopped:0,
     outcome:null, targets:[], spinTimers:[], graph:[0], nav:0, infiniteAvoid:false,
     artG:0, zoneG:0, pendingBonus:null, bonusPayout:0, bonusType:null,
-    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, presentation:null, normalScene:null, lastResult:"", forcedRole:null
+    bonusArt:false, bonusFromArt:false, bonusAnnounced:false, bonusRevealPending:false, presentation:null, normalScene:null, lastResult:"", forcedRole:null
   };
   const symbolClass = s => s === "赤7" ? "red" : s === "BAR" ? "bar" : s === "スイカ" ? "watermelon" : s === "チェリー" ? "cherry" : s === "リプレイ" ? "replay" : "";
   function renderReel(i, center, randomize=false) {
@@ -141,7 +141,16 @@
   }
   function startSpin() {
     if(state.phase!=="lever")return;
-    state.spinning=true;state.stopped=0;state.outcome=chooseOutcome();state.targets=targetsFor(state.outcome);
+    state.spinning=true;state.stopped=0;
+    if(state.bonusRevealPending && state.pendingBonus && state.bonusAnnounced) {
+      state.outcome={role:"bonusReveal",bonus:state.pendingBonus};
+      state.targets=state.pendingBonus==="BIG"?["赤7","赤7","赤7"]:["BAR","BAR","BAR"];
+      state.bonusRevealPending=false;
+      setVisual("reveal",state.pendingBonus==="BIG"?"BIG BONUS":"REGULAR BONUS","告知後の図柄揃い","BONUS","impact");
+      say("住吉「確定した反応と一致しました！」","ボーナス図柄を揃えてください。","confirm");
+    } else {
+      state.outcome=chooseOutcome();state.targets=targetsFor(state.outcome);
+    }
     state.targets=[...state.targets];
     state.payout=0;state.bet=3;state.coins-=3;state.total++;state.sinceBonus++;
     if(state.mode==="art"||state.mode==="ending"||state.mode==="ultimate")state.artG++;
@@ -153,7 +162,7 @@
       if(!state.normalScene && tease<.12) state.normalScene={stage:"investigation",age:0,kind:Math.random()<.5?"mission":"battle",chance:Math.random()<.20?"red":Math.random()<.55?"blue":"none"};
       if(state.normalScene) {
         setVisual("investigation","異常反応を検知","記録データに不一致","ANOMALY",state.normalScene.chance==="red"?"red":state.normalScene.chance==="blue"?"blue":"");
-        say("住吉「さきほどの記録に、気になる点があります」,"調査の予兆。まだ発展するとは限らない。",state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
+        say("住吉「さきほどの記録に、気になる点があります」","調査の予兆。まだ発展するとは限らない。",state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
         $("演出種別").textContent="調査煽り";
         $("expectation").textContent=state.normalScene.chance==="red"?"期待度 高":state.normalScene.chance==="blue"?"期待度 中":"期待度 ?";
       } else {
@@ -194,8 +203,8 @@
     state.targets[i]=null;state.stopped++;
     stopButtons[i].disabled=true;
     const remaining=state.targets.findIndex(v=>v!==null);
-    if(state.stopped===1 && state.outcome.bonus) say("住吉「分析します」","大塚「……続けろ」","hot");
-    if(state.stopped===2 && state.outcome.bonus) say("住吉「これは……！」","大塚「結果を見よう」","hot");
+    if(state.stopped===1 && state.outcome.bonus && !state.bonusAnnounced) say("住吉「反応を照合しています」","まだ確定ではありません。","hot");
+    if(state.stopped===2 && state.outcome.bonus && !state.bonusAnnounced) say("住吉「一致率が上昇……！」","最後の停止で結果を確認します。","hot");
     if(state.stopped===3) finishGame();
     else $("panelAction").textContent=remaining===0?"停止":(["左停止","中停止","右停止"][remaining]);
   }
@@ -204,6 +213,12 @@
     const presentationAtStart=state.presentation;
     const o=state.outcome;
     const modeAtStart=state.mode;
+    if(o.role==="bonusReveal") {
+      state.spinning=false;
+      setVisual("success",o.bonus==="BIG"?"BIG BONUS":"REGULAR BONUS","ボーナス図柄揃い","BONUS","reveal");
+      say(o.bonus==="BIG"?"住吉「BIG図柄、揃いました！」":"住吉「REG図柄、揃いました！」","ボーナスを開始します。","confirm");
+      updateStats();setPhase("result");return;
+    }
     const wasArtMode=["art","ending","ultimate"].includes(modeAtStart);
     let gain=0;
 
@@ -424,7 +439,7 @@
       const wasArt=state.bonusFromArt;
       const type=state.pendingBonus;
       const normalArtWin=type==="BIG" ? true : Math.random()<.25;
-      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.presentation=null;
+      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.bonusRevealPending=false;state.presentation=null;
 
       if(wasArt) {
         // ART bonuses are consumed after the 30G set. BIG guarantees ART;
@@ -457,9 +472,20 @@
     if(state.phase!=="bet"&&state.phase!=="result")return;
     if(state.pendingBonus) {
       if(!state.bonusAnnounced) { state.bet=3;state.payout=0;setPhase("lever");say("大塚「調査を続けるぞ」","反応を追跡中。告知まで遊技を続けます。","chance");return; }
-      const waitingForArtEnd=state.bonusFromArt &&
-        ["art","ending","ultimate"].includes(state.mode) && state.artG<30;
-      if(!waitingForArtEnd){startBonus();return;}
+      if(!state.bonusRevealPending) {
+        const waitingForArtEnd=state.bonusFromArt &&
+          ["art","ending","ultimate"].includes(state.mode) && state.artG<30;
+        if(!waitingForArtEnd) {
+          state.bonusRevealPending=true;
+          state.bet=3;state.payout=0;setPhase("lever");
+          say("大塚「確定したな。最後に図柄を揃えるぞ」","次ゲームでボーナス図柄を揃えます。","confirm");
+          return;
+        }
+      } else {
+        const waitingForArtEnd=state.bonusFromArt &&
+          ["art","ending","ultimate"].includes(state.mode) && state.artG<30;
+        if(!waitingForArtEnd){startBonus();return;}
+      }
     }
     state.bet=3;state.payout=0;setPhase("lever");
     say("住吉「準備完了です」","レバーを操作してください。");
@@ -486,7 +512,7 @@
       state.mode="bonus";
       startBonus();
     } else {
-      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.presentation=null;state.bonusFromArt=false;state.bonusArt=false;
+      state.pendingBonus=null;state.bonusType=null;state.bonusPayout=0;state.bonusAnnounced=false;state.bonusRevealPending=false;state.presentation=null;state.bonusFromArt=false;state.bonusArt=false;
       setPhase("bet");
       say("デバッグ「状態を変更しました」", "状態："+$("stateBadge").textContent+" / ART残りG："+state.artG+" / ナビ："+state.nav);
       updateStats();
@@ -507,7 +533,7 @@
   });
   $("resetButton").addEventListener("click",()=>{
     if(state.spinning)state.spinTimers.forEach(clearInterval);
-    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,presentation:null,normalScene:null,forcedRole:null});
+    Object.assign(state,{phase:"bet",mode:"normal",total:0,sinceBonus:0,bb:0,rb:0,artSets:0,coins:0,peak:0,bet:0,payout:0,spinning:false,stopped:0,outcome:null,targets:[],spinTimers:[],graph:[0],nav:0,infiniteAvoid:false,artG:0,zoneG:0,pendingBonus:null,bonusPayout:0,bonusType:null,bonusArt:false,bonusFromArt:false,bonusAnnounced:false,bonusRevealPending:false,presentation:null,normalScene:null,forcedRole:null});
     reels.forEach((_,i)=>renderReel(i,["ベル","リプレイ","BAR"][i]));
     $("演出種別").textContent="通常演出";$("expectation").textContent="期待度 --";setVisual("daily","日常記録","大塚探偵事務所","CASE FILE");say("大塚「……記録を始めるか」,"MAX BETで遊技開始");
     setPhase("bet");updateStats();
