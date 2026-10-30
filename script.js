@@ -22,6 +22,16 @@
     $("dialogue").textContent=main; $("dialogue").className="dialogue"+(level?" "+level:"");
     $("subDialogue").textContent=sub;
   }
+  function roleConversation(role) {
+    const topics = [
+      {miss:["大塚「コーヒーっていいよな」","住吉「美味しいですよね」"],replay:["大塚「コーヒーっていいよな」","住吉「リプレイでも入れます？」"],commonBell:["大塚「コーヒーっていいよな」","住吉「ベルで買ってきましょうか」"],watermelon:["大塚「コーヒーっていいよな」","住吉「スイカのお菓子もありますよ」"],cherry:["大塚「コーヒーっていいよな」","住吉「贅沢にチェリーでも入れましょうか」"]},
+      {miss:["大塚「今日は仕事したくないな」","住吉「毎日言ってますよね」"],replay:["大塚「今日は仕事したくないな」","住吉「昨日と同じ仕事を繰り返します？」"],commonBell:["大塚「書類が多いな」","住吉「ベルを鳴らして郡山さんも呼びますか」"],watermelon:["大塚「この報告書、長すぎないか」","住吉「スイカみたいに整理しましょう」"],cherry:["大塚「今日は仕事したくないな」","住吉「チェリー級の大仕事が来る前に片付けましょう」"]},
+      {miss:["大塚「最近平和だな」","住吉「そうですね、何もありませんね」"],replay:["大塚「最近平和だな」","住吉「リプレイみたいに同じ怪異が出たりして」"],commonBell:["大塚「依頼は来ているか？」","住吉「共通ベルのように、いつもの依頼ですね」"],watermelon:["大塚「現場に妙な跡があった」","住吉「スイカのような模様でしたね」"],cherry:["大塚「何か見落としている気がする」","住吉「チェリーのような小さな痕跡も見逃せません」"]},
+      {miss:["大塚「少し休むか」","住吉「まだ仕事が残ってますよ」"],replay:["大塚「少し休むか」","住吉「リプレイでも引いて休みます？」"],commonBell:["大塚「腹が減ったな」","住吉「ベルでも鳴らして出前を頼みますか」"],watermelon:["大塚「甘いものが欲しい」","住吉「スイカなら冷蔵庫にありますよ」"],cherry:["大塚「今日は少し贅沢するか」","住吉「チェリーでも添えておきましょうか」"]}
+    ];
+    const key = role==="replay"?"replay":role==="cherry"?"cherry":role==="watermelon"?"watermelon":role==="commonBell"||role==="bell"?"commonBell":"miss";
+    return topics[Math.floor(Math.random()*topics.length)][key];
+  }
   function setVisual(kind,title,detail,icon,extra="") {
     const stage=$("visualStage"); if(!stage)return;
     stage.className="visual-stage"+(kind?" is-"+kind:"")+(extra?" is-"+extra:"");
@@ -173,41 +183,16 @@
     const tease=Math.random();
     if(state.mode==="normal" && !state.presentation && !o.bonus) {
       if(!state.normalScene && tease<.16) state.normalScene={stage:"investigation",age:0,kind:Math.random()<.52?"mission":"battle",chance:Math.random()<.20?"red":Math.random()<.55?"blue":"none"};
-      if(!state.normalScene && o.role!=="replay" && tease<.035) {
-        setVisual("glitch","矛盾反応","リプレイ予告と実際の反応が不一致","CONFLICT","red");
-        say("住吉「リプレイ反応……いえ、数値が違います！」","矛盾演出発生！ 大チャンス！","hot");
-        $("演出種別").textContent="矛盾チャンス";
-        $("expectation").textContent="期待度 大幅上昇";
-        triggerEffect("strong");
-      } else if(state.normalScene) {
+      if(state.normalScene) {
         setVisual("investigation","異常反応を検知","記録データに不一致","ANOMALY",state.normalScene.chance==="red"?"red":state.normalScene.chance==="blue"?"blue":"");
         say("住吉「さきほどの記録に、気になる点があります」","調査の予兆。まだ発展するとは限らない。",state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
         $("演出種別").textContent="調査煽り";
         $("expectation").textContent=state.normalScene.chance==="red"?"期待度 高":state.normalScene.chance==="blue"?"期待度 中":"期待度 ?";
       } else {
-        const daily=[
-          ["郡山「この事務所、資料の山で床が見えないんだが」","大塚「床が見えるとでも思っていたのか」"],
-          ["住吉「本日の調査予定を確認します」","大塚「その前に郡山が昨日の報告書を出していない」"],
-          ["郡山「腹減った。調査の前に飯にしないか？」","大塚「調査の後だ。……たぶん」"],
-          ["住吉「新しい依頼が届いています」","大塚「まずは内容を確認しよう」"],
-          ["郡山「平和だな。今日は何も起きないといいが」","大塚「そういうことを言うな」"],
-          ["住吉「備品の補充をしておきました」","郡山「お菓子も？」 住吉「備品ではありません」"],
-          ["大塚「この資料、誰がここに置いた？」","郡山「知らん。資料が勝手に増える事務所だし」"],
-          ["住吉「天気は安定しています」","大塚「事件まで安定していると助かるんだがな」"]
-        ];
-        const line=daily[Math.floor(Math.random()*daily.length)];
-        const roleLines={
-          replay:["住吉「リプレイです。再遊技を確認しました」","大塚「投入分は戻った。次の調査を続けるぞ」"],
-          commonBell:["住吉「共通ベルです。いつも通りですね」","郡山「いつも通りってのが一番助かる」"],
-          bell:["住吉「押し順ベル、払い出しを確認」","大塚「手順を間違えなければ問題ない」"],
-          watermelon:["住吉「スイカを確認。反応を記録します」","大塚「関連があるか、次の結果も見ておこう」"],
-          cherry:["住吉「チェリーです。反応を記録しました」","郡山「小さな兆候でも見逃すな、ってことだな」"],
-          miss:["住吉「今回は該当する反応なしです」","大塚「なら予定に戻る。次の依頼を確認しよう」"]
-        };
-        const lineForRole=roleLines[o.role] || line;
-        setVisual("daily","事務所の日常",roleLines[o.role]?"今回の成立役を確認":"調査の合間のひととき","DAILY");
-        say(lineForRole[0],lineForRole[1]);
-        state.conversationTopic=o.role;
+        const dialogue=roleConversation(o.role);
+        setVisual("daily","事務所の日常","調査の合間の会話","DAILY");
+        say(dialogue[0],dialogue[1],o.role==="cherry"?"chance":"");
+        state.conversationTopic="daily";
         state.conversationAge++;
         $("演出種別").textContent="日常演出";
         $("expectation").textContent="期待度 --";
@@ -289,17 +274,17 @@
     } else if(o.role==="bell"||o.role==="commonBell") {
       if(modeAtStart==="normal")state.lastNormalRole=o.role;
       gain=o.role==="bell"?8:3;
-      if(!o.bonus)say("住吉「ベルです」",gain+"枚の払い出しを確認。");
+      if(!o.bonus && modeAtStart!=="normal")say("住吉「ベルです」",gain+"枚の払い出しを確認。");
     } else if(o.role==="watermelon") {
       if(modeAtStart==="normal")state.lastNormalRole="watermelon";
       gain=12;
       if(["art","ending","ultimate"].includes(modeAtStart))state.nav+=Math.random()<.5?1:2;
-      if(!o.bonus)say("住吉「スイカです！」","12枚の払い出し。","chance");
+      if(!o.bonus && modeAtStart!=="normal")say("住吉「スイカです！」","12枚の払い出し。","chance");
     } else if(o.role==="cherry") {
       if(modeAtStart==="normal")state.lastNormalRole="cherry";
       gain=4;
       if(["art","ending","ultimate"].includes(modeAtStart))state.nav+=2;
-      if(!o.bonus)say("住吉「チェリーです！」","4枚の払い出し。","chance");
+      if(!o.bonus && modeAtStart!=="normal")say("住吉「チェリーです！」","4枚の払い出し。","chance");
     } else if(o.role==="fall") {
       if(state.infiniteAvoid||state.nav>0) {
         if(!state.infiniteAvoid)state.nav--;
@@ -312,7 +297,7 @@
       }
     } else if(!o.bonus) {
       if(modeAtStart==="normal")state.lastNormalRole="miss";
-      say("大塚「……何もないか」","次のゲームに備えよう。");
+      if(modeAtStart!=="normal")say("大塚「……何もないか」","次のゲームに備えよう。");
     }
 
     if(gain){state.coins+=gain;state.payout=gain;}
