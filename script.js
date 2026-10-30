@@ -212,7 +212,8 @@
       if(!state.normalScene && tease<.16) state.normalScene={stage:"investigation",age:0,kind:Math.random()<.52?"mission":"battle",chance:Math.random()<.20?"red":Math.random()<.55?"blue":"none"};
       if(state.normalScene) {
         setVisual("investigation","異常反応を検知","記録データに不一致","ANOMALY",state.normalScene.chance==="red"?"red":state.normalScene.chance==="blue"?"blue":"");
-        const sceneLine=sceneConversation(state.normalScene.chance==="red"?"strong":"tease");\n        say(sceneLine[0],sceneLine[1],state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
+        const sceneLine=sceneConversation(state.normalScene.chance==="red"?"strong":"tease");
+        say(sceneLine[0],sceneLine[1],state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
         $("演出種別").textContent="調査煽り";
         $("expectation").textContent=state.normalScene.chance==="red"?"期待度 高":state.normalScene.chance==="blue"?"期待度 中":"期待度 ?";
       } else {
@@ -391,7 +392,8 @@
         if(s.stage==="investigation") {
           if(s.age===1) {
             setVisual("investigation","怪異調査","現場記録を再照合","INVESTIGATE",s.chance==="red"?"red":s.chance==="blue"?"blue":"");
-            const sceneLine=sceneConversation("tease");\n            say(sceneLine[0],sceneLine[1],s.chance==="red"?"hot":s.chance==="blue"?"chance":"");
+            const sceneLine=sceneConversation("tease");
+            say(sceneLine[0],sceneLine[1],s.chance==="red"?"hot":s.chance==="blue"?"chance":"");
             $("演出種別").textContent="怪異調査";
             $("expectation").textContent=s.chance==="red"?"期待度 高":s.chance==="blue"?"期待度 中":"期待度 ?";
           } else if(s.age>=2) {
@@ -407,7 +409,8 @@
               triggerEffect(battle||s.chance==="red"?"strong":"light");
             } else {
               setVisual("failure","調査終了","異常なし。記録を閉じます","NO TRACE");
-              const sceneLine=sceneConversation("fail");\n              say(sceneLine[0],sceneLine[1]);
+              const sceneLine=sceneConversation("fail");
+              say(sceneLine[0],sceneLine[1]);
               $("演出種別").textContent="調査終了";
               $("expectation").textContent="期待度 --";
               state.normalScene=null;
@@ -446,7 +449,8 @@
               }
             } else {
               setVisual("failure",battle?"対象逃走":"証拠不足","調査を終了します","FAILED");
-              const sceneLine=sceneConversation("fail");\n              say(sceneLine[0],sceneLine[1]);
+              const sceneLine=sceneConversation("fail");
+              say(sceneLine[0],sceneLine[1]);
               $("演出種別").textContent="発展失敗";
               $("expectation").textContent="期待度 --";
               triggerEffect("light");
