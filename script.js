@@ -32,6 +32,33 @@
     const key = role==="replay"?"replay":role==="cherry"?"cherry":role==="watermelon"?"watermelon":role==="commonBell"||role==="bell"?"commonBell":"miss";
     return topics[Math.floor(Math.random()*topics.length)][key];
   }
+  function sceneConversation(stage) {
+    const lines = {
+      tease:[
+        ["大塚「コーヒーっていいよな」","住吉「怪異接近中ですよ、何やってるんですか」"],
+        ["大塚「今日は静かだな」","住吉「先に怪異の対策をしてください」"],
+        ["大塚「そろそろ昼飯にするか」","住吉「その前に現場から反応が来ています」"],
+        ["大塚「この資料、後で読むか」","住吉「後回しにしている場合じゃありませんよ」"]
+      ],
+      strong:[
+        ["大塚「コーヒーっていいよな」","住吉「先に怪異の対策をしてください」"],
+        ["大塚「少し休憩にするか」","住吉「そんな余裕はありません。かなり近いです」"],
+        ["大塚「今日は平和だな」","住吉「平和ではありません。すぐそこです」"]
+      ],
+      develop:[
+        ["大塚「コーヒーっていいよな」","住吉「この戦いが終わったら僕も飲みましょうかね」"],
+        ["大塚「帰ったら飯にするか」","住吉「まずは目の前の怪異を片付けましょう」"],
+        ["大塚「面倒な依頼だな」","住吉「文句は後です。対象を確認してください」"]
+      ],
+      fail:[
+        ["大塚「……結局、何もなかったな」","住吉「記録上は異常なしです。戻りましょう」"],
+        ["大塚「気のせいだったか」","住吉「そういうことにしておきましょう」"],
+        ["大塚「コーヒーが冷めるところだった」","住吉「それは本当にすみません」"]
+      ]
+    };
+    const list=lines[stage]||lines.tease;
+    return list[Math.floor(Math.random()*list.length)];
+  }
   function setVisual(kind,title,detail,icon,extra="") {
     const stage=$("visualStage"); if(!stage)return;
     stage.className="visual-stage"+(kind?" is-"+kind:"")+(extra?" is-"+extra:"");
@@ -185,7 +212,7 @@
       if(!state.normalScene && tease<.16) state.normalScene={stage:"investigation",age:0,kind:Math.random()<.52?"mission":"battle",chance:Math.random()<.20?"red":Math.random()<.55?"blue":"none"};
       if(state.normalScene) {
         setVisual("investigation","異常反応を検知","記録データに不一致","ANOMALY",state.normalScene.chance==="red"?"red":state.normalScene.chance==="blue"?"blue":"");
-        say("住吉「さきほどの記録に、気になる点があります」","調査の予兆。まだ発展するとは限らない。",state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
+        const sceneLine=sceneConversation(state.normalScene.chance==="red"?"strong":"tease");\n        say(sceneLine[0],sceneLine[1],state.normalScene.chance==="red"?"hot":state.normalScene.chance==="blue"?"chance":"");
         $("演出種別").textContent="調査煽り";
         $("expectation").textContent=state.normalScene.chance==="red"?"期待度 高":state.normalScene.chance==="blue"?"期待度 中":"期待度 ?";
       } else {
@@ -364,7 +391,7 @@
         if(s.stage==="investigation") {
           if(s.age===1) {
             setVisual("investigation","怪異調査","現場記録を再照合","INVESTIGATE",s.chance==="red"?"red":s.chance==="blue"?"blue":"");
-            say("大塚「現場の記録を洗い直すぞ」","怪異調査演出。ここで終了する場合もある。",s.chance==="red"?"hot":s.chance==="blue"?"chance":"");
+            const sceneLine=sceneConversation("tease");\n            say(sceneLine[0],sceneLine[1],s.chance==="red"?"hot":s.chance==="blue"?"chance":"");
             $("演出種別").textContent="怪異調査";
             $("expectation").textContent=s.chance==="red"?"期待度 高":s.chance==="blue"?"期待度 中":"期待度 ?";
           } else if(s.age>=2) {
@@ -380,7 +407,7 @@
               triggerEffect(battle||s.chance==="red"?"strong":"light");
             } else {
               setVisual("failure","調査終了","異常なし。記録を閉じます","NO TRACE");
-              say("住吉「調査結果、異常なしです」","発展せず。日常へ戻ります。");
+              const sceneLine=sceneConversation("fail");\n              say(sceneLine[0],sceneLine[1]);
               $("演出種別").textContent="調査終了";
               $("expectation").textContent="期待度 --";
               state.normalScene=null;
@@ -419,7 +446,7 @@
               }
             } else {
               setVisual("failure",battle?"対象逃走":"証拠不足","調査を終了します","FAILED");
-              say(battle?"大塚「逃げられたか……！」":"住吉「証拠が足りません」","発展失敗。通常演出へ戻ります。");
+              const sceneLine=sceneConversation("fail");\n              say(sceneLine[0],sceneLine[1]);
               $("演出種別").textContent="発展失敗";
               $("expectation").textContent="期待度 --";
               triggerEffect("light");
